@@ -121,13 +121,9 @@ __global__ void run_single_stencil(int *dev_input, int *dev_output, int true_siz
   if(threadX >= true_size || threadY >= true_size)
     return;
 
-  if(threadIdx.x == 0 && threadIdx.y == 0) {
-    printf("threadX: %d, threadY: %d\n", threadX+stride, threadY+stride);
-  }
-
   /* Run single element stencil on all elements */
   from2Dto1D(dev_output, threadX+stride, threadY+stride, length) =
-    stencil_cross(dev_input, threadX+stride, threadX+stride, length, stride);
+    stencil_cross(dev_input, threadX+stride, threadY+stride, length, stride);
 }
 
 __device__ int stencil_cross(int *arr, int x, int y, int length, int stride)
