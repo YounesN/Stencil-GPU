@@ -72,7 +72,7 @@ int main(int argc, char *argv[])
   cout << "It took " << timer.GetDurationInSecondsAccurate() << " seconds to run!\n";
 
   /* Copy data back to CPU */
-  gpuErrchk(cudaMemcpy(dev_output, output, length * length * sizeof(int), cudaMemcpyDeviceToHost));
+  gpuErrchk(cudaMemcpy(output, dev_output, length * length * sizeof(int), cudaMemcpyDeviceToHost));
 
   /* Output data */
   write_output(output, output_filename, length);
@@ -196,5 +196,5 @@ void copy_input_to_gpu(int *input, int **dev_input, int **dev_output, int length
   gpuErrchk(cudaMalloc((void**) dev_output, length * length * sizeof(int)));
 
   /* Copy input array to GPU */
-  gpuErrchk(cudaMemcpy(input, *dev_input, length * length * sizeof(int), cudaMemcpyHostToDevice));
+  gpuErrchk(cudaMemcpy(*dev_input, input, length * length * sizeof(int), cudaMemcpyHostToDevice));
 }
