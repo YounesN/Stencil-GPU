@@ -1,5 +1,5 @@
 NVCC = nvcc
-NVCCFLAGS = -std=c++11
+NVCCFLAGS = -std=c++11 -I../../Utility
 
 GPU.o:
 	$(NVCC) $(NVCCFLAGS) -c -o GPU.o GPU.cu
