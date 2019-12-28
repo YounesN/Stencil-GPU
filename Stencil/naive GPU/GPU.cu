@@ -10,6 +10,16 @@ using namespace std;
 #define BLOCKX 32
 #define BLOCKY 32
 
+#define gpuErrchk(ans) { gpuAssert((ans), __FILE__, __LINE__); }
+inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort=true)
+{
+   if (code != cudaSuccess) 
+   {
+      fprintf(stderr,"GPUassert: %s %s %d\n", cudaGetErrorString(code), file, line);
+      if (abort) exit(code);
+   }
+}
+
 /* CPU Functions */
 void stencil(int **dev_input, int **dev_output, int size, int stride, int length, int time);
 __global__ void run_single_stencil(int *dev_input, int *dev_output, int true_size, int stride, int length);
@@ -55,13 +65,14 @@ int main(int argc, char *argv[])
   /* Run Stencil */
   timer.StartTimer();
   stencil(&dev_input, &dev_output, size, stride, length, time);
+  cudaDeviceSynchronize();
   timer.StopTimer();
 
   /* Print duration */
   cout << "It took " << timer.GetDurationInSecondsAccurate() << " seconds to run!\n";
 
   /* Copy data back to CPU */
-  cudaMemcpy(dev_output, output, length * length * sizeof(int), cudaMemcpyDeviceToHost);
+  gpuErrchk(cudaMemcpy(dev_output, output, length * length * sizeof(int), cudaMemcpyDeviceToHost));
 
   /* Output data */
   write_output(output, output_filename, length);
@@ -89,6 +100,7 @@ void stencil(int **dev_input, int **dev_output, int size, int stride, int length
     dim3 block_size = dim3(BLOCKX, BLOCKY);
     dim3 grid_size = dim3((int)(length / BLOCKX) + 1, (int)(length / BLOCKY) + 1);
     run_single_stencil<<< grid_size, block_size >>>(*dev_input, *dev_output, true_size, stride, length);
+    gpuErrchk(cudaGetLastError());
 
     /* Swap pointers after each run so dev_output will always be output,
      * and dev_input will be always input
@@ -180,9 +192,9 @@ void write_output(int *output, string filename, int length)
 void copy_input_to_gpu(int *input, int **dev_input, int **dev_output, int length)
 {
   /* Allocate GPU memory for input and output arrays */
-  cudaMalloc((void**) dev_input, length * length * sizeof(int));
-  cudaMalloc((void**) dev_output, length * length * sizeof(int));
+  gpuErrchk(cudaMalloc((void**) dev_input, length * length * sizeof(int)));
+  gpuErrchk(cudaMalloc((void**) dev_output, length * length * sizeof(int)));
 
   /* Copy input array to GPU */
-  cudaMemcpy(input, *dev_input, length * length * sizeof(int), cudaMemcpyHostToDevice);
+  gpuErrchk(cudaMemcpy(input, *dev_input, length * length * sizeof(int), cudaMemcpyHostToDevice));
 }
