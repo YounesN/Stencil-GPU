@@ -60,6 +60,9 @@ int main(int argc, char *argv[])
   /* Print duration */
   cout << "It took " << timer.GetDurationInSecondsAccurate() << " seconds to run!\n";
 
+  /* Copy data back to CPU */
+  cudaMemcpy(dev_output, output, length * length * sizeof(int), cudaMemcpyDeviceToHost);
+
   /* Output data */
   write_output(output, output_filename, length);
 
