@@ -51,7 +51,6 @@ int main(int argc, char *argv[])
   filename        += to_string(size) + "_" + to_string(stride) + ".dat";
   fp.open(filename, ios::out);
   
-  fp << size << " " << stride << "\r\n";
   for(i=0; i<length; i++) {
     for(j=0; j<length; j++) {
       fp << rand() % 100 << " ";
