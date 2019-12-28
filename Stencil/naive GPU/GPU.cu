@@ -12,8 +12,8 @@ using namespace std;
 
 /* CPU Functions */
 void stencil(int **dev_input, int **dev_output, int size, int stride, int length, int time);
-void run_single_stencil(int *dev_input, int *dev_output, int true_size, int stride, int length);
-inline int stencil_cross(int *arr, int x, int y, int length, int order);
+__global__ void run_single_stencil(int *dev_input, int *dev_output, int true_size, int stride, int length);
+__device__ int stencil_cross(int *arr, int x, int y, int length, int order);
 void read_input(int **input, int **output, string filename, int length);
 void write_output(int *output, string filename, int length);
 
