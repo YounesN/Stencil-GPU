@@ -98,9 +98,6 @@ void stencil(int **dev_input, int **dev_output, int size, int stride, int length
 
 __global__ void run_single_stencil(int *dev_input, int *dev_output, int true_size, int stride, int length)
 {
-  /* Define variables */
-  int i, j;
-
   /* Calculate indeces */
   int threadX = blockIdx.x * blockDim.x + threadIdx.x;
   int threadY = blockIdx.y * blockDim.y + threadIdx.y;
