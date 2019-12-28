@@ -5,8 +5,8 @@ using namespace std::chrono;
 
 class MyTimer {
 private:
-  steady_clock::time_point start;
-  steady_clock::time_point stop;
+  high_resolution_clock::time_point start;
+  high_resolution_clock::time_point stop;
 
 public:
   void StartTimer();
