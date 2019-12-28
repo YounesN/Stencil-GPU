@@ -98,7 +98,7 @@ void stencil(int **dev_input, int **dev_output, int size, int stride, int length
   for(i=0; i<time; i++) {
     /* Calculate block and grid sizes */
     dim3 block_size = dim3(BLOCKX, BLOCKY);
-    dim3 grid_size = dim3((int)(length / BLOCKX) + 1, (int)(length / BLOCKY) + 1);
+    dim3 grid_size = dim3((int)(true_size / BLOCKX) + 1, (int)(true_size / BLOCKY) + 1);
     run_single_stencil<<< grid_size, block_size >>>(*dev_input, *dev_output, true_size, stride, length);
     gpuErrchk(cudaGetLastError());
 
@@ -114,11 +114,11 @@ void stencil(int **dev_input, int **dev_output, int size, int stride, int length
 __global__ void run_single_stencil(int *dev_input, int *dev_output, int true_size, int stride, int length)
 {
   /* Calculate indeces */
-  int threadX = blockIdx.x * blockDim.x + threadIdx.x;
-  int threadY = blockIdx.y * blockDim.y + threadIdx.y;
+  int threadX = blockIdx.x * blockDim.x + threadIdx.x + stride;
+  int threadY = blockIdx.y * blockDim.y + threadIdx.y + stride;
 
   /* Make sure indeces are not out of bound */
-  if(threadX >= length || threadY >= length)
+  if(threadX >= true_size+stride || threadY >= true_size+stride)
     return;
 
   /* Run single element stencil on all elements */
