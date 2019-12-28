@@ -7,10 +7,12 @@
 using namespace std;
 
 #define from2Dto1D(arr, x, y, length) ((arr)[(y)*length+(x)])
+#define BLOCKX 32
+#define BLOCKY 32
 
 /* CPU Functions */
-void stencil(int **input, int **output, int size, int stride, int length, int time);
-void run_single_stencil(int *input, int *output, int true_size, int stride, int length);
+void stencil(int **dev_input, int **dev_output, int size, int stride, int length, int time);
+void run_single_stencil(int *dev_input, int *dev_output, int true_size, int stride, int length);
 inline int stencil_cross(int *arr, int x, int y, int length, int order);
 void read_input(int **input, int **output, string filename, int length);
 void write_output(int *output, string filename, int length);
@@ -52,7 +54,7 @@ int main(int argc, char *argv[])
 
   /* Run Stencil */
   timer.StartTimer();
-  stencil(&input, &output, size, stride, length, time);
+  stencil(&dev_input, &dev_output, size, stride, length, time);
   timer.StopTimer();
 
   /* Print duration */
@@ -61,11 +63,17 @@ int main(int argc, char *argv[])
   /* Output data */
   write_output(output, output_filename, length);
 
+  /* Free allocated memory */
+  cudaFree(dev_input);
+  cudaFree(dev_output);
+  delete [] input;
+  delete [] output;
+
   /* End of program */
   return 0;
 }
 
-void stencil(int **input, int **output, int size, int stride, int length, int time)
+void stencil(int **dev_input, int **dev_output, int size, int stride, int length, int time)
 {
   /* Define variables */
   int i;
@@ -74,31 +82,38 @@ void stencil(int **input, int **output, int size, int stride, int length, int ti
 
   /* Loop over time dimension */
   for(i=0; i<time; i++) {
-    run_single_stencil(*input, *output, true_size, stride, length);
+    /* Calculate block and grid sizes */
+    dim3 block_size = dim3(BLOCKX, BLOCKY);
+    dim3 grid_size = dim3((int)(length / BLOCKX) + 1, (int)(length / BLOCKY) + 1);
+    run_single_stencil<<< grid_size, block_size >>>(*dev_input, *dev_output, true_size, stride, length);
 
-    /* Swap pointers after each run so output will always be output,
-     * and input will be always input
+    /* Swap pointers after each run so dev_output will always be output,
+     * and dev_input will be always input
      */
-    swap = input;
-    input = output;
-    output = swap;
+    swap = dev_input;
+    dev_input = dev_output;
+    dev_output = swap;
   }
 }
 
-void run_single_stencil(int *input, int *output, int true_size, int stride, int length)
+__global__ void run_single_stencil(int *dev_input, int *dev_output, int true_size, int stride, int length)
 {
   /* Define variables */
   int i, j;
 
+  /* Calculate indeces */
+  threadX = blockIdx.x * blockDim.x + threadIdx.x;
+  threadY = blockIdx.y * blockDim.y + threadIdx.y;
+
+  /* Make sure indeces are not out of bound */
+  if(threadX >= length || threadY >= length)
+    return;
+
   /* Run single element stencil on all elements */
-  for(i=stride; i<true_size+stride; i++) {
-    for(j=stride; j<true_size+stride; j++) {
-      from2Dto1D(output, i, j, length) = stencil_cross(input, i, j, length, stride);
-    }
-  }
+  from2Dto1D(dev_output, threadX, threadY, length) = stencil_cross(dev_input, threadX, threadX, length, stride);
 }
 
-inline int stencil_cross(int *arr, int x, int y, int length, int stride)
+__device__ int stencil_cross(int *arr, int x, int y, int length, int stride)
 {
   /* Define variables */
   int sum = 0, i;

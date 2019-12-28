@@ -51,6 +51,10 @@ int main(int argc, char *argv[])
   /* Output data */
   write_output(output, output_filename, length);
 
+  /* Free allocated memory */
+  delete [] input;
+  delete [] output;
+
   /* End of program */
   return 0;
 }
