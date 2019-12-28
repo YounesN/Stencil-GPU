@@ -102,8 +102,8 @@ __global__ void run_single_stencil(int *dev_input, int *dev_output, int true_siz
   int i, j;
 
   /* Calculate indeces */
-  threadX = blockIdx.x * blockDim.x + threadIdx.x;
-  threadY = blockIdx.y * blockDim.y + threadIdx.y;
+  int threadX = blockIdx.x * blockDim.x + threadIdx.x;
+  int threadY = blockIdx.y * blockDim.y + threadIdx.y;
 
   /* Make sure indeces are not out of bound */
   if(threadX >= length || threadY >= length)
