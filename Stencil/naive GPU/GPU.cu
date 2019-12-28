@@ -114,15 +114,20 @@ void stencil(int **dev_input, int **dev_output, int size, int stride, int length
 __global__ void run_single_stencil(int *dev_input, int *dev_output, int true_size, int stride, int length)
 {
   /* Calculate indeces */
-  int threadX = blockIdx.x * blockDim.x + threadIdx.x + stride;
-  int threadY = blockIdx.y * blockDim.y + threadIdx.y + stride;
+  int threadX = blockIdx.x * blockDim.x + threadIdx.x;
+  int threadY = blockIdx.y * blockDim.y + threadIdx.y;
 
   /* Make sure indeces are not out of bound */
-  if(threadX >= true_size+stride || threadY >= true_size+stride)
+  if(threadX >= true_size || threadY >= true_size)
     return;
 
+  if(threadIdx.x == 0 && threadIdx.y == 0) {
+    printf("threadX: %d, threadY: %d\n", threadX+stride, threadY+stride);
+  }
+
   /* Run single element stencil on all elements */
-  from2Dto1D(dev_output, threadX, threadY, length) = stencil_cross(dev_input, threadX, threadX, length, stride);
+  from2Dto1D(dev_output, threadX+stride, threadY+stride, length) =
+    stencil_cross(dev_input, threadX+stride, threadX+stride, length, stride);
 }
 
 __device__ int stencil_cross(int *arr, int x, int y, int length, int stride)
