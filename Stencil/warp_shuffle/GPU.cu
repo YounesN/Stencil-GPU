@@ -53,7 +53,7 @@ int main(int argc, char *argv[])
   length          += 2 * stride;      //        + 2 * stride
   filename         = "../../Data/data_";
   filename        += to_string(size) + "_" + to_string(stride) + ".dat";
-  output_filename  = "../../Data/gpu_";
+  output_filename  = "../../Data/gpu_shfl_";
   output_filename += to_string(size) + "_" + to_string(stride) + ".dat";
 
   /* Read data from input file */
