@@ -36,8 +36,8 @@ int main(int argc, char *argv[])
   int size, stride, length, time;
   string filename, output_filename;
   MyTimer timer;
-  float selfCoefficient = 0.2;
-  float neighborCoefficient = 0.2;
+  float selfCoefficient = 1.0/9.0;
+  float neighborCoefficient = 1.0/9.0;
 
   /* Check if the arguments are set */
   if(argc < 4) {
