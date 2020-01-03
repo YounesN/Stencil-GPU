@@ -92,7 +92,6 @@ void stencil(int **dev_input, int **dev_output, int size, int stride, int length
   /* Define variables */
   int i;
   int **swap;
-  int true_size = 1 << size;
 
   /* System variables */
   int P                 = 10;                // P: defines the number of cell each thread calculates
@@ -132,7 +131,7 @@ __global__ void run_single_stencil(int *dev_input, int *dev_output, const int C,
 
   /* Initialize v[] array */
   for(i=0; i<C; i++) {
-    v[i] = dev_input[from2Dto1D(i+offset_tile_x, lane+offset_tile_y, length)];
+    v[i] = dev_input[from2Dto1D(i+offset_x, lane+offset_y, length)];
   }
 
   /* Main loop calculates for all P elements */
@@ -158,7 +157,7 @@ __global__ void run_single_stencil(int *dev_input, int *dev_output, const int C,
     }
     
     /* Write the sum back to global memory */
-    dev_output[from2Dto1D(i+offset_tile_x, lane+offset_tile_y, length)] = sum;
+    dev_output[from2Dto1D(i+offset_x, lane+offset_y, length)] = sum;
   }
 }
 
