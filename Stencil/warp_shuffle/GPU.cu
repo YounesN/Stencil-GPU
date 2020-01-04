@@ -110,6 +110,7 @@ void stencil(int **dev_input, int **dev_output, int size, int stride, int length
     dim3 grid_size = dim3(number_of_tiles_x, number_of_tiles_y, 1);
     run_single_stencil<<< grid_size, block_size >>>(*dev_input, *dev_output, C, offset_tile_x, offset_tile_y, length, stride, P, selfCoefficient, neighborCoefficient);
     gpuErrchk(cudaGetLastError());
+    cudaDeviceSynchronize();
 
     /* Swap pointers after each run so dev_output will always be output,
      * and dev_input will be always input
@@ -131,7 +132,7 @@ __global__ void run_single_stencil(int *dev_input, int *dev_output, const int C,
 
   /* Initialize v[] array */
   for(i=0; i<C; i++) {
-    v[i] = dev_input[from2Dto1D(i+offset_x, lane+offset_y, length)];
+    v[i] = dev_input[from2Dto1D(lane + offset_x, i + offset_y, length)];
   }
 
   /* Main loop calculates for all P elements */
@@ -167,7 +168,7 @@ __global__ void run_single_stencil(int *dev_input, int *dev_output, const int C,
 
   /* Write the sum back to global memory */
   for(i=stride; i<P+stride; i++)
-    dev_output[from2Dto1D(i+offset_x, lane+offset_y, length)] = o[i];
+    dev_output[from2Dto1D(lane + offset_x, i + offset_y, length)] = o[i];
 }
 
 void read_input(int **input, int **output, string filename, int length)
