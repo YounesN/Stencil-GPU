@@ -141,7 +141,8 @@ __global__ void run_single_stencil(int *dev_input, int *dev_output, const int C,
 
     /* Left wing */
     for(j=-stride; j<0; j++) {
-      sum = v[i] * neighborCoefficient + sum;
+      //sum = v[i] * neighborCoefficient + sum;
+      asm("mad.s32 %0, %1, %2, %0;" : "+r"(sum) : "r"(v[i]), "r"(neighborCoefficient))
 
       /* Shuffle up */
       sum = __shfl_up_sync(0xffffffff, sum, 1);
@@ -150,9 +151,9 @@ __global__ void run_single_stencil(int *dev_input, int *dev_output, const int C,
     /* Center column */
     for(j=-stride; j<=stride; j++) {
       if(j==0)
-        sum = v[i+j] * selfCoefficient + sum;
+        asm("mad.s32 %0, %1, %2, %0;" : "+r"(sum) : "r"(v[i]), "r"(selfCoefficient))
       else
-        sum = v[i+j] * neighborCoefficient + sum;
+        asm("mad.s32 %0, %1, %2, %0;" : "+r"(sum) : "r"(v[i]), "r"(neighborCoefficient))
     }
 
     /* Right wing */
@@ -160,7 +161,7 @@ __global__ void run_single_stencil(int *dev_input, int *dev_output, const int C,
       /* Shuffle up */
       sum = __shfl_up_sync(0xffffffff, sum, 1);
       
-      sum = v[i] * neighborCoefficient + sum;
+      asm("mad.s32 %0, %1, %2, %0;" : "+r"(sum) : "r"(v[i]), "r"(neighborCoefficient))
     }
     
     o[i] = sum;
