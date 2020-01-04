@@ -142,24 +142,24 @@ __global__ void run_single_stencil(int *dev_input, int *dev_output, const int C,
     /* Left wing */
     for(j=-stride; j<0; j++) {
       sum = v[i] * neighborCoefficient + sum;
-    }
 
-    /* Shuffle up */
-    sum = __shfl_up_sync(0xffffffff, sum, 1);
+      /* Shuffle up */
+      sum = __shfl_up_sync(0xffffffff, sum, 1);
+    }
 
     /* Center column */
     for(j=-stride; j<=stride; j++) {
-      if(i==0)
-        sum = v[i] * selfCoefficient + sum;
+      if(j==0)
+        sum = v[i+j] * selfCoefficient + sum;
       else
-        sum = v[i] * neighborCoefficient + sum;
+        sum = v[i+j] * neighborCoefficient + sum;
     }
-
-    /* Shuffle up */
-    sum = __shfl_up_sync(0xffffffff, sum, 1);
 
     /* Right wing */
     for(j=1; j<=stride; j++) {
+      /* Shuffle up */
+      sum = __shfl_up_sync(0xffffffff, sum, 1);
+      
       sum = v[i] * neighborCoefficient + sum;
     }
     
@@ -168,7 +168,7 @@ __global__ void run_single_stencil(int *dev_input, int *dev_output, const int C,
 
   /* Write the sum back to global memory */
   for(i=stride; i<P+stride; i++)
-    dev_output[from2Dto1D(lane + offset_x, i + offset_y, length)] = o[i];
+    dev_output[from2Dto1D(lane + offset_x - stride, i + offset_y, length)] = o[i];
 }
 
 void read_input(int **input, int **output, string filename, int length)
