@@ -131,9 +131,6 @@ __global__ void run_single_stencil(int *dev_input, int *dev_output, const int C,
   int offset_y = blockIdx.y * offset_tile_y;
   int lane     = threadIdx.x;
 
-  if(lane+offset_x > length-stride)
-    return;
-
   /* Initialize v[] array */
   for(i=0; i<C; i++) {
     v[i] = dev_input[from2Dto1D(lane + offset_x, i + offset_y, length)];
@@ -171,7 +168,7 @@ __global__ void run_single_stencil(int *dev_input, int *dev_output, const int C,
 
   /* Write the sum back to global memory */
   for(i=stride; i<P+stride; i++) {
-    if(lane >= 2*stride) {
+    if(lane >= 2*stride && lane+offset_x < length-stride) {
       dev_output[from2Dto1D(lane+offset_x-stride, i+offset_y, length)] = o[i];
     }
   }
