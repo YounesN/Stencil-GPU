@@ -8,6 +8,7 @@ using namespace std;
 
 #define from2Dto1D(x, y, length) ((y)*length+(x))
 #define WARP_SIZE 32
+#define FULL_MASK 0xffffffff
 
 #define gpuErrchk(ans) { gpuAssert((ans), __FILE__, __LINE__); }
 inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort=true)
@@ -145,7 +146,7 @@ __global__ void run_single_stencil(int *dev_input, int *dev_output, const int C,
       sum = v[i] + sum;
 
       /* Shuffle up */
-      sum = __shfl_up_sync(0xffffffff, sum, 1);
+      sum = __shfl_up_sync(FULL_MASK, sum, 1);
     }
 
     /* Center column */
@@ -156,7 +157,7 @@ __global__ void run_single_stencil(int *dev_input, int *dev_output, const int C,
     /* Right wing */
     for(j=1; j<=stride; j++) {
       /* Shuffle up */
-      sum = __shfl_up_sync(0xffffffff, sum, 1);
+      sum = __shfl_up_sync(FULL_MASK, sum, 1);
       
       sum = v[i] + sum;
     }
@@ -166,8 +167,11 @@ __global__ void run_single_stencil(int *dev_input, int *dev_output, const int C,
   }
 
   /* Write the sum back to global memory */
-  for(i=stride; i<P+stride; i++)
+  for(i=stride; i<P+stride; i++) {
     dev_output[from2Dto1D(lane + offset_x - stride, i + offset_y, length)] = o[i];
+    if(threadIdx.x == 0 && blockIdx.x == 0)
+      printf("x: %d, y: %d\n", lane+offset_x-stride, i+offset_y);
+  }
 }
 
 void read_input(int **input, int **output, string filename, int length)
