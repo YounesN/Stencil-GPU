@@ -198,6 +198,7 @@ void read_input(int **input, int **output, string filename, int length)
   for(i=0; i<length; i++) {
     for(j=0; j<length; j++) {
       fp >> (*input)[from2Dto1D(i, j, length)];
+      (*output)[from2Dto1D(i, j, length)] = 0;
     }
   }
 }
