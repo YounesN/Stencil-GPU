@@ -198,8 +198,8 @@ void read_input(int **input, int **output, string filename, int length)
   for(i=0; i<length; i++) {
     for(j=0; j<length; j++) {
       //fp >> (*input)[from2Dto1D(i, j, length)];
-      (*input)[from2Dto1D(i, j, length)] = 1;
-      (*output)[from2Dto1D(i, j, length)] = 0;
+      (*input)[from2Dto1D(j, i, length)] = 1;
+      (*output)[from2Dto1D(j, i, length)] = 0;
     }
   }
 }
@@ -219,7 +219,7 @@ void write_output(int *output, string filename, int length)
 
   for(i=0; i<length; i++) {
     for(j=0; j<length; j++) {
-      fp << output[from2Dto1D(i, j, length)] << " ";
+      fp << output[from2Dto1D(j, i, length)] << " ";
     }
     fp << "\n";
   }
