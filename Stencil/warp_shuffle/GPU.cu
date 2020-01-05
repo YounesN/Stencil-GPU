@@ -168,7 +168,7 @@ __global__ void run_single_stencil(int *dev_input, int *dev_output, const int C,
 
   /* Write the sum back to global memory */
   for(i=stride; i<P+stride; i++) {
-    if(lane >= 2*stride && lane+offset_x < length-stride) {
+    if(lane >= 2*stride && lane+offset_x < length) {
       dev_output[from2Dto1D(lane+offset_x-stride, i+offset_y, length)] = o[i];
     }
   }
