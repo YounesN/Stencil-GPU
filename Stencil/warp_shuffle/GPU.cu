@@ -66,6 +66,7 @@ int main(int argc, char *argv[])
   /* Run Stencil */
   timer.StartTimer();
   stencil(&dev_input, &dev_output, size, stride, length, time, selfCoefficient, neighborCoefficient);
+  cudaDeviceSynchronize();
   timer.StopTimer();
 
   /* Print duration */
