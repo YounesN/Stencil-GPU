@@ -150,7 +150,7 @@ __global__ void run_single_stencil(int *dev_input, int *dev_output, const int C,
 
     /* Center column */
     for(j=-stride; j<=stride; j++) {
-      sum = v[i] + sum;
+      sum = v[i+j] + sum;
     }
 
     /* Right wing */
