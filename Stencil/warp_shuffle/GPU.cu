@@ -66,7 +66,6 @@ int main(int argc, char *argv[])
   /* Run Stencil */
   timer.StartTimer();
   stencil(&dev_input, &dev_output, size, stride, length, time, selfCoefficient, neighborCoefficient);
-  cudaDeviceSynchronize();
   timer.StopTimer();
 
   /* Print duration */
@@ -111,7 +110,7 @@ void stencil(int **dev_input, int **dev_output, int size, int stride, int length
     dim3 grid_size = dim3(number_of_tiles_x, number_of_tiles_y, 1);
     run_single_stencil<<< grid_size, block_size >>>(*dev_input, *dev_output, C, offset_tile_x, offset_tile_y, length, stride, P, selfCoefficient, neighborCoefficient);
     gpuErrchk(cudaGetLastError());
-    cudaDeviceSynchronize();
+    //cudaDeviceSynchronize();
 
     /* Swap pointers after each run so dev_output will always be output,
      * and dev_input will be always input
