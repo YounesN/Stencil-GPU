@@ -150,7 +150,7 @@ void write_output(int *output, string filename, int length)
 
   for(i=0; i<length; i++) {
     for(j=0; j<length; j++) {
-      fp << from2Dto1D(output, i, j, length) << " ";
+      fp << from2Dto1D(output, j, i, length) << " ";
     }
     fp << "\n";
   }
