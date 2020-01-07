@@ -189,8 +189,8 @@ void read_input(DATA_TYPE **input, DATA_TYPE **output, string filename, int leng
   }
 
   /* Allocate space for our arrays */
-  *input = new int[length * length];
-  *output = new int[length * length];
+  *input = new DATA_TYPE[length * length];
+  *output = new DATA_TYPE[length * length];
 
   /* Read data from file */
   for(i=0; i<length; i++) {
