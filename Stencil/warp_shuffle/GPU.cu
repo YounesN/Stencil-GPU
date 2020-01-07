@@ -99,7 +99,7 @@ void stencil(DATA_TYPE **dev_input, DATA_TYPE **dev_output, int size, int stride
   int P                 = 2;                // P: defines the number of cell each thread calculates
   int N                 = (2 * stride) + 1;  // N: stencil length each direction
   int C                 = (N + P - 1);       // C: each block will calculate (warp_size * C) size
-  int number_of_warps_x = 4;
+  int number_of_warps_x = 2;
 
   int number_of_tiles_x = int(length / (WARP_SIZE * number_of_warps_x - 2 * stride)) + 1;
   int number_of_tiles_y = int(length / P) + 1;
