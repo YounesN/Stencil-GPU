@@ -9,6 +9,7 @@ using namespace std;
 #define from2Dto1D(x, y, length) ((y)*length+(x))
 #define WARP_SIZE 32
 #define FULL_MASK 0xffffffff
+#define DATA_TYPE float
 
 #define gpuErrchk(ans) { gpuAssert((ans), __FILE__, __LINE__); }
 inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort=true)
@@ -21,19 +22,19 @@ inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort=t
 }
 
 /* CPU Functions */
-void stencil(int **dev_input, int **dev_output, int size, int stride, int length, int time, float selfCoefficient, float neighborCoefficient);
-__global__ void run_single_stencil(int *dev_input, int *dev_output, const int C, int offset_tile_x, int offset_tile_y, int length, int stride, int P, float selfCoefficient, float neighborCoefficient);
-void read_input(int **input, int **output, string filename, int length);
-void write_output(int *output, string filename, int length);
+void stencil(DATA_TYPE **dev_input, DATA_TYPE **dev_output, int size, int stride, int length, int time, float selfCoefficient, float neighborCoefficient);
+__global__ void run_single_stencil(DATA_TYPE *dev_input, DATA_TYPE *dev_output, const int C, int offset_tile_x, int offset_tile_y, int length, int stride, int P, float selfCoefficient, float neighborCoefficient);
+void read_input(DATA_TYPE **input, DATA_TYPE **output, string filename, int length);
+void write_output(DATA_TYPE *output, string filename, int length);
 
 /* GPU Functions */
-void copy_input_to_gpu(int *input, int **dev_input, int **dev_output, int length);
+void copy_input_to_gpu(DATA_TYPE *input, DATA_TYPE **dev_input, DATA_TYPE **dev_output, int length);
 
 int main(int argc, char *argv[])
 {
   /* Define variables */
-  int *input, *output;
-  int *dev_input, *dev_output;
+  DATA_TYPE *input, *output;
+  DATA_TYPE *dev_input, *dev_output;
   int size, stride, length, time;
   string filename, output_filename;
   MyTimer timer;
@@ -88,11 +89,11 @@ int main(int argc, char *argv[])
   return 0;
 }
 
-void stencil(int **dev_input, int **dev_output, int size, int stride, int length, int time, float selfCoefficient, float neighborCoefficient)
+void stencil(DATA_TYPE **dev_input, DATA_TYPE **dev_output, int size, int stride, int length, int time, float selfCoefficient, float neighborCoefficient)
 {
   /* Define variables */
   int i;
-  int **swap;
+  DATA_TYPE **swap;
 
   /* System variables */
   int P                 = 2;                // P: defines the number of cell each thread calculates
@@ -122,11 +123,11 @@ void stencil(int **dev_input, int **dev_output, int size, int stride, int length
   }
 }
 
-__global__ void run_single_stencil(int *dev_input, int *dev_output, const int C, int offset_tile_x, int offset_tile_y, int length, int stride, int P, float selfCoefficient, float neighborCoefficient)
+__global__ void run_single_stencil(DATA_TYPE *dev_input, DATA_TYPE *dev_output, const int C, int offset_tile_x, int offset_tile_y, int length, int stride, int P, float selfCoefficient, float neighborCoefficient)
 {
   /* Declare variables */
   int i, j;
-  int v[6], o[6]; // C=N+P-1
+  DATA_TYPE v[6], o[6]; // C=N+P-1
   int offset_x = blockIdx.x * offset_tile_x;
   int offset_y = blockIdx.y * offset_tile_y;
   int lane     = threadIdx.x;
@@ -174,7 +175,7 @@ __global__ void run_single_stencil(int *dev_input, int *dev_output, const int C,
   }
 }
 
-void read_input(int **input, int **output, string filename, int length)
+void read_input(DATA_TYPE **input, DATA_TYPE **output, string filename, int length)
 {
   /* Define variables */
   int i, j;
@@ -200,7 +201,7 @@ void read_input(int **input, int **output, string filename, int length)
   }
 }
 
-void write_output(int *output, string filename, int length)
+void write_output(DATA_TYPE *output, string filename, int length)
 {
   /* Define variables */
   int i, j;
@@ -221,12 +222,12 @@ void write_output(int *output, string filename, int length)
   }
 }
 
-void copy_input_to_gpu(int *input, int **dev_input, int **dev_output, int length)
+void copy_input_to_gpu(DATA_TYPE *input, DATA_TYPE **dev_input, DATA_TYPE **dev_output, int length)
 {
   /* Allocate GPU memory for input and output arrays */
-  gpuErrchk(cudaMalloc((void**) dev_input, length * length * sizeof(int)));
-  gpuErrchk(cudaMalloc((void**) dev_output, length * length * sizeof(int)));
+  gpuErrchk(cudaMalloc((void**) dev_input, length * length * sizeof(DATA_TYPE)));
+  gpuErrchk(cudaMalloc((void**) dev_output, length * length * sizeof(DATA_TYPE)));
 
   /* Copy input array to GPU */
-  gpuErrchk(cudaMemcpy(*dev_input, input, length * length * sizeof(int), cudaMemcpyHostToDevice));
+  gpuErrchk(cudaMemcpy(*dev_input, input, length * length * sizeof(DATA_TYPE), cudaMemcpyHostToDevice));
 }
