@@ -127,7 +127,7 @@ __global__ void run_single_stencil(DATA_TYPE *dev_input, DATA_TYPE *dev_output, 
 {
   /* Declare variables */
   int i, j;
-  DATA_TYPE v[6], o[6]; // C=N+P-1
+  DATA_TYPE v[12], o[12];
   int offset_x = blockIdx.x * offset_tile_x;
   int offset_y = blockIdx.y * offset_tile_y;
   int lane     = threadIdx.x;
