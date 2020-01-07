@@ -95,7 +95,7 @@ void stencil(int **dev_input, int **dev_output, int size, int stride, int length
   int **swap;
 
   /* System variables */
-  int P                 = 10;                // P: defines the number of cell each thread calculates
+  int P                 = 2;                // P: defines the number of cell each thread calculates
   int N                 = (2 * stride) + 1;  // N: stencil length each direction
   int C                 = (N + P - 1);       // C: each block will calculate (warp_size * C) size
 
@@ -126,7 +126,7 @@ __global__ void run_single_stencil(int *dev_input, int *dev_output, const int C,
 {
   /* Declare variables */
   int i, j;
-  int v[14], o[14]; // C=N+P-1
+  int v[6], o[6]; // C=N+P-1
   int offset_x = blockIdx.x * offset_tile_x;
   int offset_y = blockIdx.y * offset_tile_y;
   int lane     = threadIdx.x;
