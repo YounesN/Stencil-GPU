@@ -74,7 +74,7 @@ int main(int argc, char *argv[])
   cout << "It took " << timer.GetDurationInSecondsAccurate() << " seconds to run!\n";
 
   /* Copy data back to CPU */
-  gpuErrchk(cudaMemcpy(output, dev_output, length * length * sizeof(int), cudaMemcpyDeviceToHost));
+  gpuErrchk(cudaMemcpy(output, dev_output, length * length * sizeof(DATA_TYPE), cudaMemcpyDeviceToHost));
 
   /* Output data */
   write_output(output, output_filename, length);
@@ -124,7 +124,7 @@ void stencil(DATA_TYPE **dev_input, DATA_TYPE **dev_output, int size, int stride
   }
 }
 
-__global__ void run_single_stencil(DATA_TYPE *dev_input, DATA_TYPE *dev_output, const int C, int offset_tile_x, int offset_tile_y, int length, int stride, int P, float selfCoefficient, float neighborCoefficient, int number_of_warps_x)
+__global__ void run_single_stencil(DATA_TYPE *dev_input, DATA_TYPE *dev_output, const int C, int offset_tile_x, int offset_tile_y, int length, int stride, int P, DATA_TYPE selfCoefficient, DATA_TYPE neighborCoefficient, int number_of_warps_x)
 {
   /* Declare variables */
   int i, j;
@@ -144,8 +144,7 @@ __global__ void run_single_stencil(DATA_TYPE *dev_input, DATA_TYPE *dev_output, 
 
     /* Left wing */
     for(j=-stride; j<0; j++) {
-      //sum = v[i] * neighborCoefficient + sum;
-      sum = v[i] + sum;
+      sum = v[i] * neighborCoefficient + sum;
 
       /* Shuffle up */
       sum = __shfl_up_sync(FULL_MASK, sum, 1);
@@ -153,7 +152,10 @@ __global__ void run_single_stencil(DATA_TYPE *dev_input, DATA_TYPE *dev_output, 
 
     /* Center column */
     for(j=-stride; j<=stride; j++) {
-      sum = v[i+j] + sum;
+      if(j == 0)
+        sum = v[i+j] * selfCoefficient + sum;
+      else
+        sum = v[i+j] * neighborCoefficient + sum;
     }
 
     /* Right wing */
@@ -161,10 +163,9 @@ __global__ void run_single_stencil(DATA_TYPE *dev_input, DATA_TYPE *dev_output, 
       /* Shuffle up */
       sum = __shfl_up_sync(FULL_MASK, sum, 1);
       
-      sum = v[i] + sum;
+      sum = v[i] * neighborCoefficient + sum;
     }
     
-    sum /= (stride * 4 + 1);
     o[i] = sum;
   }
 
