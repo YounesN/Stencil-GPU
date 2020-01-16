@@ -21,6 +21,18 @@ inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort=t
    }
 }
 
+string toString(int n)
+{
+    string tmp = "";
+    while (n > 0) {
+        int re = n % 10;
+        n = n / 10;
+        tmp += re + '0';
+    }
+    reverse(tmp.begin(), tmp.end());
+    return tmp;
+}
+
 /* CPU Functions */
 void stencil(DATA_TYPE **dev_input, DATA_TYPE **dev_output, int size, int stride, int length, int time, float selfCoefficient, float neighborCoefficient);
 __global__ void run_single_stencil(DATA_TYPE *dev_input, DATA_TYPE *dev_output, const int C, int offset_tile_x, int offset_tile_y, int length, int stride, int P, float selfCoefficient, float neighborCoefficient, int number_of_warps_x);
@@ -54,9 +66,9 @@ int main(int argc, char *argv[])
   length           = 1 << size;       // length = 2 ^ size
   length          += 2 * stride;      //        + 2 * stride
   filename         = "../../Data/data_";
-  filename        += to_string(size) + "_" + to_string(stride) + ".dat";
+  filename        += toString(size) + "_" + toString(stride) + ".dat";
   output_filename  = "../../Data/gpu_shfl_";
-  output_filename += to_string(size) + "_" + to_string(stride) + ".dat";
+  output_filename += toString(size) + "_" + toString(stride) + ".dat";
 
   /* Read data from input file */
   read_input(&input, &output, filename, length);
