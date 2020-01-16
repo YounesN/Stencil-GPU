@@ -140,7 +140,7 @@ __global__ void run_single_stencil(DATA_TYPE *dev_input, DATA_TYPE *dev_output, 
 
   /* Main loop calculates for all P elements */
   for(i=stride; i<P+stride; i++) {
-    int sum = 0;
+    DATA_TYPE sum = 0;
 
     /* Left wing */
     for(j=-stride; j<0; j++) {
