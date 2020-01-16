@@ -3,6 +3,7 @@
 #include <cuda.h>
 #include <cuda_runtime.h>
 #include "timing.h"
+#include <algorithm>
 
 using namespace std;
 
