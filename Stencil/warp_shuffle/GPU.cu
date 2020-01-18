@@ -158,9 +158,9 @@ __global__ void run_single_stencil(DATA_TYPE *dev_input, DATA_TYPE *dev_output,
   int lanePlusOffsetX = lane + offset_x;
 
   /* Initialize v[] array */
-  for(i=0; i<C; i++) {
-    v[i] = dev_input[from2Dto1D(lanePlusOffsetX, i + offset_y, length)];
-  }
+  //for(i=0; i<C; i++) {
+  //  v[i] = dev_input[from2Dto1D(lanePlusOffsetX, i + offset_y, length)];
+  //}
 
   /* Main loop calculates for all P elements */
   for(i=stride; i<P+stride; i++) {
