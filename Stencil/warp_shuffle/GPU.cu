@@ -151,8 +151,8 @@ __global__ void run_single_stencil(DATA_TYPE *dev_input, DATA_TYPE *dev_output,
   /* Declare variables */
   int i, j;
   DATA_TYPE v[6], o[6];
-  int offset_x = 0;//blockIdx.x * (offset_tile_x * number_of_warps_x) + (threadIdx.x / 32) * offset_tile_x;
-  int offset_y = 0;//blockIdx.y * offset_tile_y;
+  int offset_x = blockIdx.x * (offset_tile_x * number_of_warps_x) + (threadIdx.x / 32) * offset_tile_x;
+  int offset_y = blockIdx.y * offset_tile_y;
   int lane     = threadIdx.x % WARP_SIZE;
 
   int lanePlusOffsetX = lane + offset_x;
