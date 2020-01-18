@@ -151,16 +151,16 @@ __global__ void run_single_stencil(DATA_TYPE *dev_input, DATA_TYPE *dev_output,
   /* Declare variables */
   int i, j;
   DATA_TYPE v[6], o[6];
-  int offset_x = blockIdx.x * (offset_tile_x * number_of_warps_x) + (threadIdx.x / 32) * offset_tile_x;
-  int offset_y = blockIdx.y * offset_tile_y;
+  int offset_x = 0;//blockIdx.x * (offset_tile_x * number_of_warps_x) + (threadIdx.x / 32) * offset_tile_x;
+  int offset_y = 0;//blockIdx.y * offset_tile_y;
   int lane     = threadIdx.x % WARP_SIZE;
 
   int lanePlusOffsetX = lane + offset_x;
 
   /* Initialize v[] array */
-  //for(i=0; i<C; i++) {
-  //  v[i] = dev_input[from2Dto1D(lanePlusOffsetX, i + offset_y, length)];
-  //}
+  for(i=0; i<C; i++) {
+    v[i] = dev_input[from2Dto1D(lanePlusOffsetX, i + offset_y, length)];
+  }
 
   /* Main loop calculates for all P elements */
   for(i=stride; i<P+stride; i++) {
@@ -204,11 +204,11 @@ __global__ void run_single_stencil(DATA_TYPE *dev_input, DATA_TYPE *dev_output,
   }
 
   /* Write the sum back to global memory */
-  //for(i=stride; i<P+stride; i++) {
-  //  if(lane >= 2*stride && lane+offset_x < length && i+offset_y < length-stride) {
-  //    dev_output[from2Dto1D(lane+offset_x-stride, i+offset_y, length)] = o[i];
-  //  }
-  //}
+  for(i=stride; i<P+stride; i++) {
+    if(lane >= 2*stride && lane+offset_x < length && i+offset_y < length-stride) {
+      dev_output[from2Dto1D(lane+offset_x-stride, i+offset_y, length)] = o[i];
+    }
+  }
 }
 
 void read_input(DATA_TYPE **input, DATA_TYPE **output, string filename, int length)
