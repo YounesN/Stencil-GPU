@@ -167,38 +167,27 @@ __global__ void run_single_stencil(DATA_TYPE *dev_input, DATA_TYPE *dev_output,
     DATA_TYPE sum = 0;
 
     /* Left wing */
-    //for(j=-stride; j<0; j++) {
+    for(j=-stride; j<0; j++) {
       sum = v[i] * neighborCoefficient + sum;
 
       /* Shuffle up */
       sum = __shfl_up_sync(FULL_MASK, sum, 1);
-
-      sum = v[i] * neighborCoefficient + sum;
-      sum = __shfl_up_sync(FULL_MASK, sum, 1);
-    //}
+    }
 
     /* Center column */
-    //for(j=-stride; j<=stride; j++) {
-      //if(j == 0)
-        //sum = v[i+j] * selfCoefficient + sum;
-      //else
-        //sum = v[i+j] * neighborCoefficient + sum;
-    //}
-    sum = v[i-2] * neighborCoefficient + sum;
-    sum = v[i-1] * neighborCoefficient + sum;
-    sum = v[i] * selfCoefficient + sum;
-    sum = v[i+1] * neighborCoefficient + sum;
-    sum = v[i+2] * neighborCoefficient + sum;
+    for(j=-stride; j<=stride; j++) {
+      if(j == 0)
+        sum = v[i+j] * selfCoefficient + sum;
+      else
+        sum = v[i+j] * neighborCoefficient + sum;
+    }
 
     /* Right wing */
-    //for(j=1; j<=stride; j++) {
+    for(j=1; j<=stride; j++) {
       /* Shuffle up */
       sum = __shfl_up_sync(FULL_MASK, sum, 1);
       sum = v[i] * neighborCoefficient + sum;
-
-      sum = __shfl_up_sync(FULL_MASK, sum, 1);
-      sum = v[i] * neighborCoefficient + sum;
-    //}
+    }
     
     o[i] = sum;
   }
