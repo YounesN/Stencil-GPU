@@ -35,8 +35,11 @@ string toString(int n)
 }
 
 /* CPU Functions */
-void stencil(DATA_TYPE **dev_input, DATA_TYPE **dev_output, int size, int stride, int length, int time, float selfCoefficient, float neighborCoefficient);
-__global__ void run_single_stencil(DATA_TYPE *dev_input, DATA_TYPE *dev_output, const int C, int offset_tile_x, int offset_tile_y, int length, int stride, int P, float selfCoefficient, float neighborCoefficient, int number_of_warps_x);
+void stencil(DATA_TYPE **dev_input, DATA_TYPE **dev_output, int size, int stride,
+  int length, int time, float selfCoefficient, float neighborCoefficient);
+__global__ void run_single_stencil(DATA_TYPE *dev_input, DATA_TYPE *dev_output,
+  const int C, int offset_tile_x, int offset_tile_y, int length, int stride,
+  int P, float selfCoefficient, float neighborCoefficient, int number_of_warps_x);
 void read_input(DATA_TYPE **input, DATA_TYPE **output, string filename, int length);
 void write_output(DATA_TYPE *output, string filename, int length);
 
@@ -102,7 +105,8 @@ int main(int argc, char *argv[])
   return 0;
 }
 
-void stencil(DATA_TYPE **dev_input, DATA_TYPE **dev_output, int size, int stride, int length, int time, float selfCoefficient, float neighborCoefficient)
+void stencil(DATA_TYPE **dev_input, DATA_TYPE **dev_output, int size, int stride,
+  int length, int time, float selfCoefficient, float neighborCoefficient)
 {
   /* Define variables */
   int i;
@@ -124,7 +128,9 @@ void stencil(DATA_TYPE **dev_input, DATA_TYPE **dev_output, int size, int stride
     /* Calculate block and grid sizes */
     dim3 block_size = dim3(WARP_SIZE * number_of_warps_x, 1, 1);
     dim3 grid_size = dim3(number_of_tiles_x, number_of_tiles_y, 1);
-    run_single_stencil<<< grid_size, block_size >>>(*dev_input, *dev_output, C, offset_tile_x, offset_tile_y, length, stride, P, selfCoefficient, neighborCoefficient, number_of_warps_x);
+    run_single_stencil<<< grid_size, block_size >>>(*dev_input, *dev_output, C,
+      offset_tile_x, offset_tile_y, length, stride, P, selfCoefficient,
+      neighborCoefficient, number_of_warps_x);
     gpuErrchk(cudaGetLastError());
     //cudaDeviceSynchronize();
 
@@ -137,7 +143,10 @@ void stencil(DATA_TYPE **dev_input, DATA_TYPE **dev_output, int size, int stride
   }
 }
 
-__global__ void run_single_stencil(DATA_TYPE *dev_input, DATA_TYPE *dev_output, const int C, int offset_tile_x, int offset_tile_y, int length, int stride, int P, DATA_TYPE selfCoefficient, DATA_TYPE neighborCoefficient, int number_of_warps_x)
+__global__ void run_single_stencil(DATA_TYPE *dev_input, DATA_TYPE *dev_output,
+  const int C, int offset_tile_x, int offset_tile_y, int length, int stride,
+  int P, DATA_TYPE selfCoefficient, DATA_TYPE neighborCoefficient,
+  int number_of_warps_x)
 {
   /* Declare variables */
   int i, j;
@@ -146,9 +155,11 @@ __global__ void run_single_stencil(DATA_TYPE *dev_input, DATA_TYPE *dev_output, 
   int offset_y = blockIdx.y * offset_tile_y;
   int lane     = threadIdx.x % WARP_SIZE;
 
+  int lanePlusOffsetX = lane + offset_x;
+
   /* Initialize v[] array */
   for(i=0; i<C; i++) {
-    v[i] = dev_input[from2Dto1D(lane + offset_x, i + offset_y, length)];
+    v[i] = dev_input[from2Dto1D(lanePlusOffsetX, i + offset_y, length)];
   }
 
   /* Main loop calculates for all P elements */

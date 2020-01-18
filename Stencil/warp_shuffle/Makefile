@@ -5,7 +5,7 @@ GPU: GPU.o
 	$(NVCC) $(NVCCFLAGS) -o GPU GPU.o
 
 GPU.o:
-	$(NVCC) $(NVCCFLAGS) -c -o GPU.o GPU.cu
+	$(NVCC) $(NVCCFLAGS) -Xptxas -O3 -c -o GPU.o GPU.cu
 
 clean:
 	rm *.o GPU
