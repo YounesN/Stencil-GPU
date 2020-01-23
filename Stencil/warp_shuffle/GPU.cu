@@ -64,7 +64,7 @@ int main(int argc, char *argv[])
   float neighborCoefficient = 1.0/9.0;
 
   /* Check if the arguments are set */
-  if(argc < 4) {
+  if(argc < 3) {
     cerr << "Usage: ./CPU <size> <time>\n";
     exit(EXIT_FAILURE);
   }
