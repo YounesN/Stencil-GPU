@@ -126,7 +126,7 @@ void stencil(DATA_TYPE **dev_input, DATA_TYPE **dev_output, int size,
     /* Calculate block and grid sizes */
     dim3 block_size = dim3(WARP_SIZE * NUMBER_OF_WARPS_PER_X, 1, 1);
     dim3 grid_size = dim3(number_of_tiles_x, number_of_tiles_y, 1);
-    run_single_stencil<<< grid_size, block_size >>>(*dev_input, *dev_output, C,
+    run_single_stencil<<< grid_size, block_size >>>(*dev_input, *dev_output,
       offset_tile_x, length, selfCoefficient, neighborCoefficient);
     gpuErrchk(cudaGetLastError());
     //cudaDeviceSynchronize();
