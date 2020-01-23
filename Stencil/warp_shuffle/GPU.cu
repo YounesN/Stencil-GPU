@@ -12,10 +12,10 @@ using namespace std;
 #define FULL_MASK 0xffffffff
 #define DATA_TYPE float
 #define NUMBER_OF_WARPS_PER_X 1
-#define P 1
+#define P 2
 #define STRIDE 2
 #define N 5        // N = 2 * STRIDE + 1
-#define C 5        // C = (N+P-1)
+#define C 6        // C = (N+P-1)
 
 #define gpuErrchk(ans) { gpuAssert((ans), __FILE__, __LINE__); }
 inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort=true)
