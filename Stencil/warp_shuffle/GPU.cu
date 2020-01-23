@@ -11,6 +11,11 @@ using namespace std;
 #define WARP_SIZE 32
 #define FULL_MASK 0xffffffff
 #define DATA_TYPE float
+#define NUMBER_OF_WARPS_PER_X 1
+#define P 1
+#define STRIDE 2
+#define N 5        // N = 2 * STRIDE + 1
+#define C 5        // C = (N+P-1)
 
 #define gpuErrchk(ans) { gpuAssert((ans), __FILE__, __LINE__); }
 inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort=true)
@@ -35,12 +40,13 @@ string toString(int n)
 }
 
 /* CPU Functions */
-void stencil(DATA_TYPE **dev_input, DATA_TYPE **dev_output, int size, int stride,
+void stencil(DATA_TYPE **dev_input, DATA_TYPE **dev_output, int size,
   int length, int time, float selfCoefficient, float neighborCoefficient);
 __global__ void run_single_stencil(DATA_TYPE *dev_input, DATA_TYPE *dev_output,
-  const int C, int offset_tile_x, int offset_tile_y, int length, int stride,
-  int P, float selfCoefficient, float neighborCoefficient, int number_of_warps_x);
-void read_input(DATA_TYPE **input, DATA_TYPE **output, string filename, int length);
+  int offset_tile_x, int length, float selfCoefficient,
+  float neighborCoefficient);
+void read_input(DATA_TYPE **input, DATA_TYPE **output, string filename,
+  int length);
 void write_output(DATA_TYPE *output, string filename, int length);
 
 /* GPU Functions */
@@ -51,7 +57,7 @@ int main(int argc, char *argv[])
   /* Define variables */
   DATA_TYPE *input, *output;
   DATA_TYPE *dev_input, *dev_output;
-  int size, stride, length, time;
+  int size, length, time;
   string filename, output_filename;
   MyTimer timer;
   float selfCoefficient = 1.0/9.0;
@@ -59,20 +65,19 @@ int main(int argc, char *argv[])
 
   /* Check if the arguments are set */
   if(argc < 4) {
-    cerr << "Usage: ./CPU <size> <stride> <time>\n";
+    cerr << "Usage: ./CPU <size> <time>\n";
     exit(EXIT_FAILURE);
   }
 
   /* Set initial variables */
   size             = atoi(argv[1]);
-  stride           = atoi(argv[2]);
-  time             = atoi(argv[3]);
+  time             = atoi(argv[2]);
   length           = 1 << size;       // length = 2 ^ size
-  length          += 2 * stride;      //        + 2 * stride
+  length          += 2 * STRIDE;      //        + 2 * stride
   filename         = "../../Data/data_";
-  filename        += toString(size) + "_" + toString(stride) + ".dat";
+  filename        += toString(size) + "_" + toString(STRIDE) + ".dat";
   output_filename  = "../../Data/gpu_shfl_";
-  output_filename += toString(size) + "_" + toString(stride) + ".dat";
+  output_filename += toString(size) + "_" + toString(STRIDE) + ".dat";
 
   /* Read data from input file */
   read_input(&input, &output, filename, length);
@@ -82,7 +87,7 @@ int main(int argc, char *argv[])
 
   /* Run Stencil */
   timer.StartTimer();
-  stencil(&dev_input, &dev_output, size, stride, length, time, selfCoefficient, neighborCoefficient);
+  stencil(&dev_input, &dev_output, size, length, time, selfCoefficient, neighborCoefficient);
   cudaDeviceSynchronize();
   timer.StopTimer();
 
@@ -105,32 +110,24 @@ int main(int argc, char *argv[])
   return 0;
 }
 
-void stencil(DATA_TYPE **dev_input, DATA_TYPE **dev_output, int size, int stride,
+void stencil(DATA_TYPE **dev_input, DATA_TYPE **dev_output, int size,
   int length, int time, float selfCoefficient, float neighborCoefficient)
 {
   /* Define variables */
   int i;
   DATA_TYPE **swap;
 
-  /* System variables */
-  int P                 = 2;                // P: defines the number of cell each thread calculates
-  int N                 = (2 * stride) + 1;  // N: stencil length each direction
-  int C                 = (N + P - 1);       // C: each block will calculate (warp_size * C) size
-  int number_of_warps_x = 8;
-
-  int number_of_tiles_x = int(length / (WARP_SIZE * number_of_warps_x - 2 * stride)) + 1;
+  int number_of_tiles_x = int(length / (WARP_SIZE * NUMBER_OF_WARPS_PER_X - 2 * STRIDE)) + 1;
   int number_of_tiles_y = int(length / P) + 1;
-  int offset_tile_x     = WARP_SIZE - 2 * stride;
-  int offset_tile_y     = P;
+  int offset_tile_x     = WARP_SIZE - 2 * STRIDE;
 
   /* Loop over time dimension */
   for(i=0; i<time; i++) {
     /* Calculate block and grid sizes */
-    dim3 block_size = dim3(WARP_SIZE * number_of_warps_x, 1, 1);
+    dim3 block_size = dim3(WARP_SIZE * NUMBER_OF_WARPS_PER_X, 1, 1);
     dim3 grid_size = dim3(number_of_tiles_x, number_of_tiles_y, 1);
     run_single_stencil<<< grid_size, block_size >>>(*dev_input, *dev_output, C,
-      offset_tile_x, offset_tile_y, length, stride, P, selfCoefficient,
-      neighborCoefficient, number_of_warps_x);
+      offset_tile_x, length, selfCoefficient, neighborCoefficient);
     gpuErrchk(cudaGetLastError());
     //cudaDeviceSynchronize();
 
@@ -144,15 +141,14 @@ void stencil(DATA_TYPE **dev_input, DATA_TYPE **dev_output, int size, int stride
 }
 
 __global__ void run_single_stencil(DATA_TYPE *dev_input, DATA_TYPE *dev_output,
-  const int C, int offset_tile_x, int offset_tile_y, int length, int stride,
-  int P, DATA_TYPE selfCoefficient, DATA_TYPE neighborCoefficient,
-  int number_of_warps_x)
+  int offset_tile_x, int length, DATA_TYPE selfCoefficient,
+  DATA_TYPE neighborCoefficient)
 {
   /* Declare variables */
   int i, j;
-  DATA_TYPE v[6], o[6];
-  int offset_x = blockIdx.x * (offset_tile_x * number_of_warps_x) + (threadIdx.x / 32) * offset_tile_x;
-  int offset_y = blockIdx.y * offset_tile_y;
+  DATA_TYPE v[C], o[C];
+  int offset_x = blockIdx.x * (offset_tile_x * NUMBER_OF_WARPS_PER_X) + (threadIdx.x / 32) * offset_tile_x;
+  int offset_y = blockIdx.y * P;
   int lane     = threadIdx.x % WARP_SIZE;
 
   int lanePlusOffsetX = lane + offset_x;
@@ -163,11 +159,12 @@ __global__ void run_single_stencil(DATA_TYPE *dev_input, DATA_TYPE *dev_output,
   }
 
   /* Main loop calculates for all P elements */
-  for(i=stride; i<P+stride; i++) {
+  #pragma unroll
+  for(i=STRIDE; i<P+STRIDE; i++) {
     DATA_TYPE sum = 0;
 
     /* Left wing */
-    for(j=-stride; j<0; j++) {
+    for(j=-STRIDE; j<0; j++) {
       sum = v[i] * neighborCoefficient + sum;
 
       /* Shuffle up */
@@ -175,7 +172,7 @@ __global__ void run_single_stencil(DATA_TYPE *dev_input, DATA_TYPE *dev_output,
     }
 
     /* Center column */
-    for(j=-stride; j<=stride; j++) {
+    for(j=-STRIDE; j<=STRIDE; j++) {
       if(j == 0)
         sum = v[i+j] * selfCoefficient + sum;
       else
@@ -183,7 +180,7 @@ __global__ void run_single_stencil(DATA_TYPE *dev_input, DATA_TYPE *dev_output,
     }
 
     /* Right wing */
-    for(j=1; j<=stride; j++) {
+    for(j=1; j<=STRIDE; j++) {
       /* Shuffle up */
       sum = __shfl_up_sync(FULL_MASK, sum, 1);
       sum = v[i] * neighborCoefficient + sum;
@@ -193,9 +190,9 @@ __global__ void run_single_stencil(DATA_TYPE *dev_input, DATA_TYPE *dev_output,
   }
 
   /* Write the sum back to global memory */
-  for(i=stride; i<P+stride; i++) {
-    if(lane >= 2*stride && lane+offset_x < length && i+offset_y < length-stride) {
-      dev_output[from2Dto1D(lane+offset_x-stride, i+offset_y, length)] = o[i];
+  for(i=STRIDE; i<P+STRIDE; i++) {
+    if(lane >= 2*STRIDE && lane+offset_x < length && i+offset_y < length-STRIDE) {
+      dev_output[from2Dto1D(lane+offset_x-STRIDE, i+offset_y, length)] = o[i];
     }
   }
 }
