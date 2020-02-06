@@ -73,7 +73,7 @@ int main(int argc, char *argv[])
   cout << "It took " << timer.GetDurationInSecondsAccurate() << " seconds to run!\n";
 
   /* Copy data back to CPU */
-  gpuErrchk(cudaMemcpy(output, dev_output, length * length * sizeof(int), cudaMemcpyDeviceToHost));
+  gpuErrchk(cudaMemcpy(output, dev_output, length * length * sizeof(DATA_TYPE), cudaMemcpyDeviceToHost));
 
   /* Output data */
   write_output(output, output_filename, length);
@@ -131,7 +131,7 @@ __global__ void run_single_stencil(DATA_TYPE *dev_input, DATA_TYPE *dev_output, 
 __device__ DATA_TYPE stencil_cross(DATA_TYPE *arr, int x, int y, int length, int stride)
 {
   /* Define variables */
-  int sum = 0, i;
+  DATA_TYPE sum = 0, i;
 
   /* Add cross pattern */
   for(i=-stride; i<=stride; i++) {
