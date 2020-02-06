@@ -10,7 +10,7 @@ using namespace std;
 
 void stencil(DATA_TYPE **input, DATA_TYPE **output, int size, int stride, int length, int time);
 void run_single_stencil(DATA_TYPE *input, DATA_TYPE *output, int true_size, int stride, int length);
-inline int stencil_cross(DATA_TYPE *arr, int x, int y, int length, int order);
+inline DATA_TYPE stencil_cross(DATA_TYPE *arr, int x, int y, int length, int order);
 void read_input(DATA_TYPE **input, DATA_TYPE **output, string filename, int length);
 void write_output(DATA_TYPE *output, string filename, int length);
 
@@ -94,7 +94,7 @@ void run_single_stencil(DATA_TYPE *input, DATA_TYPE *output, int true_size, int 
   }
 }
 
-inline int stencil_cross(DATA_TYPE *arr, int x, int y, int length, int stride)
+inline DATA_TYPE stencil_cross(DATA_TYPE *arr, int x, int y, int length, int stride)
 {
   /* Define variables */
   DATA_TYPE sum = 0;
