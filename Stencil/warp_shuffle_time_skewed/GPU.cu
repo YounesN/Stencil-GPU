@@ -76,7 +76,7 @@ int main(int argc, char *argv[])
   length          += 2 * STRIDE;      //        + 2 * stride
   filename         = "../../Data/data_";
   filename        += toString(size) + "_" + toString(STRIDE) + ".dat";
-  output_filename  = "../../Data/gpu_shfl_";
+  output_filename  = "../../Data/gpu_shfl_skewed_";
   output_filename += toString(size) + "_" + toString(STRIDE) + ".dat";
 
   /* Read data from input file */
