@@ -29,7 +29,7 @@ void read_input(DATA_TYPE **input, DATA_TYPE **output, string filename, int leng
 void write_output(DATA_TYPE *output, string filename, int length);
 
 /* GPU Functions */
-void copy_input_to_gpu(DATA_TYPE *input, DATA_TYPE **dev_input, int **dev_output, int length);
+void copy_input_to_gpu(DATA_TYPE *input, DATA_TYPE **dev_input, DATA_TYPE **dev_output, int length);
 
 int main(int argc, char *argv[])
 {
@@ -192,7 +192,7 @@ void write_output(DATA_TYPE *output, string filename, int length)
   }
 }
 
-void copy_input_to_gpu(DATA_TYPE *input, DATA_TYPE **dev_input, int **dev_output, int length)
+void copy_input_to_gpu(DATA_TYPE *input, DATA_TYPE **dev_input, DATA_TYPE **dev_output, int length)
 {
   /* Allocate GPU memory for input and output arrays */
   gpuErrchk(cudaMalloc((void**) dev_input, length * length * sizeof(int)));
