@@ -9,6 +9,7 @@ using namespace std;
 #define from2Dto1D(arr, x, y, length) ((arr)[(y)*length+(x)])
 #define BLOCKX 32
 #define BLOCKY 32
+#define DATA_TYPE float
 
 #define gpuErrchk(ans) { gpuAssert((ans), __FILE__, __LINE__); }
 inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort=true)
@@ -21,20 +22,20 @@ inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort=t
 }
 
 /* CPU Functions */
-void stencil(int **dev_input, int **dev_output, int size, int stride, int length, int time);
-__global__ void run_single_stencil(int *dev_input, int *dev_output, int true_size, int stride, int length);
-__device__ int stencil_cross(int *arr, int x, int y, int length, int order);
-void read_input(int **input, int **output, string filename, int length);
-void write_output(int *output, string filename, int length);
+void stencil(DATA_TYPE **dev_input, DATA_TYPE **dev_output, int size, int stride, int length, int time);
+__global__ void run_single_stencil(DATA_TYPE *dev_input, DATA_TYPE *dev_output, int true_size, int stride, int length);
+__device__ DATA_TYPE stencil_cross(DATA_TYPE *arr, int x, int y, int length, int order);
+void read_input(DATA_TYPE **input, DATA_TYPE **output, string filename, int length);
+void write_output(DATA_TYPE *output, string filename, int length);
 
 /* GPU Functions */
-void copy_input_to_gpu(int *input, int **dev_input, int **dev_output, int length);
+void copy_input_to_gpu(DATA_TYPE *input, DATA_TYPE **dev_input, int **dev_output, int length);
 
 int main(int argc, char *argv[])
 {
   /* Define variables */
-  int *input, *output;
-  int *dev_input, *dev_output;
+  DATA_TYPE *input, *output;
+  DATA_TYPE *dev_input, *dev_output;
   int size, stride, length, time;
   string filename, output_filename;
   MyTimer timer;
@@ -87,11 +88,11 @@ int main(int argc, char *argv[])
   return 0;
 }
 
-void stencil(int **dev_input, int **dev_output, int size, int stride, int length, int time)
+void stencil(DATA_TYPE **dev_input, DATA_TYPE **dev_output, int size, int stride, int length, int time)
 {
   /* Define variables */
   int i;
-  int **swap;
+  DATA_TYPE **swap;
   int true_size = 1 << size;
 
   /* Loop over time dimension */
@@ -112,7 +113,7 @@ void stencil(int **dev_input, int **dev_output, int size, int stride, int length
   }
 }
 
-__global__ void run_single_stencil(int *dev_input, int *dev_output, int true_size, int stride, int length)
+__global__ void run_single_stencil(DATA_TYPE *dev_input, DATA_TYPE *dev_output, int true_size, int stride, int length)
 {
   /* Calculate indeces */
   int threadX = blockIdx.x * blockDim.x + threadIdx.x;
@@ -127,7 +128,7 @@ __global__ void run_single_stencil(int *dev_input, int *dev_output, int true_siz
     stencil_cross(dev_input, threadX+stride, threadY+stride, length, stride);
 }
 
-__device__ int stencil_cross(int *arr, int x, int y, int length, int stride)
+__device__ DATA_TYPE stencil_cross(DATA_TYPE *arr, int x, int y, int length, int stride)
 {
   /* Define variables */
   int sum = 0, i;
@@ -145,7 +146,7 @@ __device__ int stencil_cross(int *arr, int x, int y, int length, int stride)
   return sum / (stride * 4 + 1);
 }
 
-void read_input(int **input, int **output, string filename, int length)
+void read_input(DATA_TYPE **input, DATA_TYPE **output, string filename, int length)
 {
   /* Define variables */
   int i, j;
@@ -159,8 +160,8 @@ void read_input(int **input, int **output, string filename, int length)
   }
 
   /* Allocate space for our arrays */
-  *input = new int[length * length];
-  *output = new int[length * length];
+  *input = new DATA_TYPE[length * length];
+  *output = new DATA_TYPE[length * length];
 
   /* Read data from file */
   for(i=0; i<length; i++) {
@@ -170,7 +171,7 @@ void read_input(int **input, int **output, string filename, int length)
   }
 }
 
-void write_output(int *output, string filename, int length)
+void write_output(DATA_TYPE *output, string filename, int length)
 {
   /* Define variables */
   int i, j;
@@ -191,7 +192,7 @@ void write_output(int *output, string filename, int length)
   }
 }
 
-void copy_input_to_gpu(int *input, int **dev_input, int **dev_output, int length)
+void copy_input_to_gpu(DATA_TYPE *input, DATA_TYPE **dev_input, int **dev_output, int length)
 {
   /* Allocate GPU memory for input and output arrays */
   gpuErrchk(cudaMalloc((void**) dev_input, length * length * sizeof(int)));
