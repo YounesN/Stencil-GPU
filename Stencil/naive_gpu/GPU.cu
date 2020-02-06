@@ -131,7 +131,8 @@ __global__ void run_single_stencil(DATA_TYPE *dev_input, DATA_TYPE *dev_output, 
 __device__ DATA_TYPE stencil_cross(DATA_TYPE *arr, int x, int y, int length, int stride)
 {
   /* Define variables */
-  DATA_TYPE sum = 0, i;
+  DATA_TYPE sum = 0;
+  int i;
 
   /* Add cross pattern */
   for(i=-stride; i<=stride; i++) {
