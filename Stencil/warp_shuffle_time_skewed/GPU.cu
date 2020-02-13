@@ -99,7 +99,7 @@ int main(int argc, char *argv[])
 
   /////////// INVESTIGATE THIS PART FOR INVALID MEMORY ACCESS
   int number_of_tiles_x = int(length / (WARP_SIZE * NUMBER_OF_WARPS_PER_X - 2 * STRIDE)) + 1;
-  int number_of_tiles_y = int(length / P) + 1;
+  int number_of_tiles_y = int((length-2*STRIDE) / P) + 1;
   int offset_tile_x     = WARP_SIZE - 2 * STRIDE;
 
   // Calculate dependency array sizes
