@@ -20,9 +20,8 @@ using namespace std;
 __device__ bool checkArrayAccess(int x, int y, int length, const char *file, int line) {
   
   if(x>=length || y>=length) {
-    printf("Illegal memory access in %s line %d!\n", file, line);
-    printf("x: %d, y: %d, length: %d\n", x, y, length);
-    exit(EXIT_FAILURE);
+    printf("Illegal memory access in %s line %d! x: %d, y: %d, length: %d\n", file, line, x, y, length);
+    return false;
   }
   return true;
 }
