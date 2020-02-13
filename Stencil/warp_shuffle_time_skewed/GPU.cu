@@ -12,10 +12,10 @@ using namespace std;
 #define FULL_MASK 0xffffffff
 #define DATA_TYPE float
 #define NUMBER_OF_WARPS_PER_X 1
-#define P 20
+#define P 32
 #define STRIDE 2
 #define N 5        // N = 2 * STRIDE + 1
-#define C 24        // C = (N+P-1)
+#define C 36        // C = (N+P-1)
 
 __device__ bool checkArrayAccess(int x, int y, int lengthx, int lengthy, const char *file, int line) {
   
