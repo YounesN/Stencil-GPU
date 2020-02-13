@@ -151,6 +151,9 @@ __global__ void run_stencil(DATA_TYPE *dev_input, DATA_TYPE *dev_output,
   int lane     = threadIdx.x % WARP_SIZE;
 
   int lanePlusOffsetX = lane + offset_x;
+  if(lanePlusOffsetX >= length) {
+    return;
+  }
 
   /* Initialize v[] array */
   for(i=0; i<C; i++) {
