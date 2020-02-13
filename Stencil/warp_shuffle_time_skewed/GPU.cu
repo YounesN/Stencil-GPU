@@ -12,10 +12,10 @@ using namespace std;
 #define FULL_MASK 0xffffffff
 #define DATA_TYPE float
 #define NUMBER_OF_WARPS_PER_X 1
-#define P 32
+#define P 2
 #define STRIDE 2
 #define N 5        // N = 2 * STRIDE + 1
-#define C 36        // C = (N+P-1)
+#define C 6        // C = (N+P-1)
 
 __device__ bool checkArrayAccess(int x, int y, int lengthx, int lengthy, const char *file, int line) {
   
@@ -165,8 +165,8 @@ void stencil(DATA_TYPE **dev_input, DATA_TYPE **dev_output, int size,
   dim3 block_size = dim3(WARP_SIZE * NUMBER_OF_WARPS_PER_X, 1, 1);
   dim3 grid_size = dim3(number_of_tiles_x, number_of_tiles_y, 1);
   run_stencil<<< grid_size, block_size >>>(*dev_input, *dev_output, *dev_dep_up,
-    *dev_dep_down, dep_size_x, dep_size_y, offset_tile_x, length, selfCoefficient, neighborCoefficient,
-    time);
+    *dev_dep_down, dep_size_x, dep_size_y, offset_tile_x, length,
+    selfCoefficient, neighborCoefficient, time);
   gpuErrchk(cudaGetLastError());
 }
 
@@ -178,7 +178,8 @@ __global__ void run_stencil(DATA_TYPE *dev_input, DATA_TYPE *dev_output,
   /* Declare variables */
   int i, j, t;
   DATA_TYPE v[C], o[C];
-  int offset_x = blockIdx.x * (offset_tile_x * NUMBER_OF_WARPS_PER_X) + (threadIdx.x / 32) * offset_tile_x;
+  int offset_x = blockIdx.x * (offset_tile_x * NUMBER_OF_WARPS_PER_X) +
+                 (threadIdx.x / 32) * offset_tile_x;
   int offset_y = blockIdx.y * P;
   int lane     = threadIdx.x % WARP_SIZE;
 
