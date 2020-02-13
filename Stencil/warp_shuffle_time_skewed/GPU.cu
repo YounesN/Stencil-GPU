@@ -182,7 +182,7 @@ __global__ void run_stencil(DATA_TYPE *dev_input, DATA_TYPE *dev_output,
   int offset_y = blockIdx.y * P;
   int lane     = threadIdx.x % WARP_SIZE;
 
-  int lanePlusOffsetX = lane + offset_x; bv   
+  int lanePlusOffsetX = lane + offset_x;
    
   if(lanePlusOffsetX >= length) {
     return;
