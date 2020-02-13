@@ -166,7 +166,7 @@ __global__ void run_stencil(DATA_TYPE *dev_input, DATA_TYPE *dev_output,
 
   /* Initialize v[] array */
   for(i=0; i<C; i++) {
-    checkArrayAccess(lanePlusOffsetX, i + offset_y, length, __FILE__, __LINE__);
+    //checkArrayAccess(lanePlusOffsetX, i + offset_y, length, __FILE__, __LINE__);
     v[i] = dev_input[from2Dto1D(lanePlusOffsetX, i + offset_y, length)];
   }
 
@@ -244,7 +244,7 @@ __global__ void run_stencil(DATA_TYPE *dev_input, DATA_TYPE *dev_output,
     // [ 4 ] // STRIDE  ** Copy these to array dev_dep_down
     // [ 5 ] // STRIDE  ** Copy these to array dev_dep_down
     for(i=0; i<STRIDE; i++) {
-      checkArrayAccess(lanePlusOffsetX, offset_y+i, length, __FILE__, __LINE__);
+      //checkArrayAccess(lanePlusOffsetX, offset_y+i, length, __FILE__, __LINE__);
       dev_dep_down[from2Dto1D(lanePlusOffsetX, offset_y+i, length)] = v[P+STRIDE+i];
     }
 
@@ -257,7 +257,7 @@ __global__ void run_stencil(DATA_TYPE *dev_input, DATA_TYPE *dev_output,
     // [ 4 ] // STRIDE
     // [ 5 ] // STRIDE
     for(i=0; i<STRIDE; i++) {
-      checkArrayAccess(lanePlusOffsetX, offset_y+i, length, __FILE__, __LINE__);
+      //checkArrayAccess(lanePlusOffsetX, offset_y+i, length, __FILE__, __LINE__);
       dev_dep_up[from2Dto1D(lanePlusOffsetX, offset_y+i, length)] = v[i];
     }
 
@@ -272,7 +272,7 @@ __global__ void run_stencil(DATA_TYPE *dev_input, DATA_TYPE *dev_output,
     // [ 4 ] // STRIDE  ** Copy these from array dev_dep_up
     // [ 5 ] // STRIDE  ** Copy these from array dev_dep_up
     for(i=0; i<STRIDE; i++) {
-      checkArrayAccess(lanePlusOffsetX, offset_y+i, length, __FILE__, __LINE__);
+      //checkArrayAccess(lanePlusOffsetX, offset_y+i, length, __FILE__, __LINE__);
       v[P+STRIDE+i] = dev_dep_up[from2Dto1D(lanePlusOffsetX, offset_y+i, length)];
     }
 
@@ -285,7 +285,7 @@ __global__ void run_stencil(DATA_TYPE *dev_input, DATA_TYPE *dev_output,
     // [ 4 ] // STRIDE
     // [ 5 ] // STRIDE
     for(i=0; i<STRIDE; i++) {
-      checkArrayAccess(lanePlusOffsetX, offset_y+i, length, __FILE__, __LINE__);
+      //checkArrayAccess(lanePlusOffsetX, offset_y+i, length, __FILE__, __LINE__);
       v[i] = dev_dep_down[from2Dto1D(lanePlusOffsetX, offset_y+i, length)] = v[i];
     }
   }
@@ -293,7 +293,7 @@ __global__ void run_stencil(DATA_TYPE *dev_input, DATA_TYPE *dev_output,
   /* Write the sum back to global memory */
   for(i=STRIDE; i<P+STRIDE; i++) {
     if(lane >= 2*STRIDE && lane+offset_x < length && i+offset_y < length-STRIDE) {
-      checkArrayAccess(lane+offset_x-STRIDE, i+offset_y, length, __FILE__, __LINE__);
+      //checkArrayAccess(lane+offset_x-STRIDE, i+offset_y, length, __FILE__, __LINE__);
       dev_output[from2Dto1D(lane+offset_x-STRIDE, i+offset_y, length)] = o[i];
     }
   }
