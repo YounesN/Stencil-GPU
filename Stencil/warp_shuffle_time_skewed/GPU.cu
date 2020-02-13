@@ -41,13 +41,16 @@ string toString(int n)
 
 /* CPU Functions */
 void stencil(DATA_TYPE **dev_input, DATA_TYPE **dev_output, int size,
-  int length, int time, float selfCoefficient, float neighborCoefficient);
+  int length, int time, float selfCoefficient, float neighborCoefficient,
+  int number_of_tiles_x, int number_of_tiles_y, int offset_tile_x,
+  DATA_TYPE **dev_dep_up, DATA_TYPE **dev_dep_down);
 __global__ void run_stencil(DATA_TYPE *dev_input, DATA_TYPE *dev_output,
-  int offset_tile_x, int length, float selfCoefficient,
-  float neighborCoefficient, int time);
+  DATA_TYPE *dev_dep_up, DATA_TYPE *dev_dep_down, int offset_tile_x,
+  int length, float selfCoefficient, float neighborCoefficient, int time);
 void read_input(DATA_TYPE **input, DATA_TYPE **output, string filename,
   int length);
 void write_output(DATA_TYPE *output, string filename, int length);
+void allocateDependencyArrays(DATA_TYPE **dev_dep_up, DATA_TYPE **dev_dep_down, int dep_size_x, int dep_size_y);
 
 /* GPU Functions */
 void copy_input_to_gpu(DATA_TYPE *input, DATA_TYPE **dev_input, DATA_TYPE **dev_output, int length);
@@ -56,7 +59,7 @@ int main(int argc, char *argv[])
 {
   /* Define variables */
   DATA_TYPE *input, *output;
-  DATA_TYPE *dev_input, *dev_output;
+  DATA_TYPE *dev_input, *dev_output, *dev_dep_up, *dev_dep_down;
   int size, length, time;
   string filename, output_filename;
   MyTimer timer;
@@ -85,9 +88,21 @@ int main(int argc, char *argv[])
   /* Copy data to GPU */
   copy_input_to_gpu(input, &dev_input, &dev_output, length);
 
+  /////////// INVESTIGATE THIS PART FOR INVALID MEMORY ACCESS
+  int number_of_tiles_x = int(length / (WARP_SIZE * NUMBER_OF_WARPS_PER_X - 2 * STRIDE)) + 1;
+  int number_of_tiles_y = int(length / P) + 1;
+  int offset_tile_x     = WARP_SIZE - 2 * STRIDE;
+
+  // Calculate dependency array sizes
+  int dep_size_x = length;
+  int dep_size_y = (length / number_of_tiles_y) * STRIDE;
+  allocateDependencyArrays(&dev_dep_up, &dev_dep_down, dep_size_x, dep_size_y);
+
   /* Run Stencil */
   timer.StartTimer();
-  stencil(&dev_input, &dev_output, size, length, time, selfCoefficient, neighborCoefficient);
+  stencil(&dev_input, &dev_output, size, length, time, selfCoefficient,
+    neighborCoefficient, number_of_tiles_x, number_of_tiles_y, offset_tile_x,
+    &dev_dep_up, &dev_dep_down);
   cudaDeviceSynchronize();
   timer.StopTimer();
 
@@ -111,27 +126,22 @@ int main(int argc, char *argv[])
 }
 
 void stencil(DATA_TYPE **dev_input, DATA_TYPE **dev_output, int size,
-  int length, int time, float selfCoefficient, float neighborCoefficient)
+  int length, int time, float selfCoefficient, float neighborCoefficient,
+  int number_of_tiles_x, int number_of_tiles_y, int offset_tile_x,
+  DATA_TYPE **dev_dep_up, DATA_TYPE **dev_dep_down)
 {
-  /* Define variables */
-  int i;
-  DATA_TYPE **swap;
-
-  int number_of_tiles_x = int(length / (WARP_SIZE * NUMBER_OF_WARPS_PER_X - 2 * STRIDE)) + 1;
-  int number_of_tiles_y = int(length / P) + 1;
-  int offset_tile_x     = WARP_SIZE - 2 * STRIDE;
-
   /* Calculate block and grid sizes */
   dim3 block_size = dim3(WARP_SIZE * NUMBER_OF_WARPS_PER_X, 1, 1);
   dim3 grid_size = dim3(number_of_tiles_x, number_of_tiles_y, 1);
-  run_stencil<<< grid_size, block_size >>>(*dev_input, *dev_output,
-    offset_tile_x, length, selfCoefficient, neighborCoefficient, time);
+  run_stencil<<< grid_size, block_size >>>(*dev_input, *dev_output, *dev_dep_up,
+    *dev_dep_down, offset_tile_x, length, selfCoefficient, neighborCoefficient,
+    time);
   gpuErrchk(cudaGetLastError());
 }
 
 __global__ void run_stencil(DATA_TYPE *dev_input, DATA_TYPE *dev_output,
-  int offset_tile_x, int length, DATA_TYPE selfCoefficient,
-  DATA_TYPE neighborCoefficient, int time)
+  DATA_TYPE *dev_dep_up, DATA_TYPE *dev_dep_down, int offset_tile_x,
+  int length, float selfCoefficient, float neighborCoefficient, int time)
 {
   /* Declare variables */
   int i, j, t;
@@ -149,7 +159,7 @@ __global__ void run_stencil(DATA_TYPE *dev_input, DATA_TYPE *dev_output,
 
   for(t=0; t<time; t++) {
     /* Main loop calculates for all P elements */
-    if(i%2==0) {
+    if(i%2==0) { // switch between shuffle up and down to keep data close to origin
       for(i=STRIDE; i<P+STRIDE; i++) {
         DATA_TYPE sum = 0;
   
@@ -210,6 +220,56 @@ __global__ void run_stencil(DATA_TYPE *dev_input, DATA_TYPE *dev_output,
     }
     for(i=0; i<C; i++) {
       v[i] = o[i];
+    }
+
+    // Copy to dependency arrays (lower threads)
+    // e.g. STRIDE = 2 and P = 2
+    // [ 0 ] // STRIDE
+    // [ 1 ] // STRIDE
+    // [ 2 ] // P
+    // [ 3 ] // P
+    // [ 4 ] // STRIDE  ** Copy these to array dev_dep_down
+    // [ 5 ] // STRIDE  ** Copy these to array dev_dep_down
+    for(i=0; i<STRIDE; i++) {
+      dev_dep_down[from2Dto1D(lanePlusOffsetX, offset_y+i, length)] = v[P+STRIDE+i];
+    }
+
+    // Copy to dependency arrays (upper threads)
+    // e.g. STRIDE = 2 and P = 2
+    // [ 0 ] // STRIDE  ** Copy these to array dev_dep_up
+    // [ 1 ] // STRIDE  ** Copy these to array dev_dep_up
+    // [ 2 ] // P
+    // [ 3 ] // P
+    // [ 4 ] // STRIDE
+    // [ 5 ] // STRIDE
+    for(i=0; i<STRIDE; i++) {
+      dev_dep_up[from2Dto1D(lanePlusOffsetX, offset_y+i, length)] = v[i];
+    }
+
+    ///////// SYNCHRONIZATION
+
+    // Copy from dependency arrays (lower threads)
+    // e.g. STRIDE = 2 and P = 2
+    // [ 0 ] // STRIDE
+    // [ 1 ] // STRIDE
+    // [ 2 ] // P
+    // [ 3 ] // P
+    // [ 4 ] // STRIDE  ** Copy these from array dev_dep_up
+    // [ 5 ] // STRIDE  ** Copy these from array dev_dep_up
+    for(i=0; i<STRIDE; i++) {
+      v[P+STRIDE+i] = dev_dep_up[from2Dto1D(lanePlusOffsetX, offset_y+i, length)];
+    }
+
+    // Copy to dependency arrays (upper threads)
+    // e.g. STRIDE = 2 and P = 2
+    // [ 0 ] // STRIDE  ** Copy these from array dev_dep_down
+    // [ 1 ] // STRIDE  ** Copy these from array dev_dep_down
+    // [ 2 ] // P
+    // [ 3 ] // P
+    // [ 4 ] // STRIDE
+    // [ 5 ] // STRIDE
+    for(i=0; i<STRIDE; i++) {
+      v[i] = dev_dep_down[from2Dto1D(lanePlusOffsetX, offset_y+i, length)] = v[i];
     }
   }
 
@@ -276,4 +336,10 @@ void copy_input_to_gpu(DATA_TYPE *input, DATA_TYPE **dev_input, DATA_TYPE **dev_
 
   /* Copy input array to GPU */
   gpuErrchk(cudaMemcpy(*dev_input, input, length * length * sizeof(DATA_TYPE), cudaMemcpyHostToDevice));
+}
+
+void allocateDependencyArrays(DATA_TYPE **dev_dep_up, DATA_TYPE **dev_dep_down, int dep_size_x, int dep_size_y)
+{
+  gpuErrchk(cudaMalloc((void**) dev_dep_up, dep_size_x * dep_size_y * sizeof(DATA_TYPE)));
+  gpuErrchk(cudaMalloc((void**) dev_dep_down, dep_size_x * dep_size_y * sizeof(DATA_TYPE)));
 }
