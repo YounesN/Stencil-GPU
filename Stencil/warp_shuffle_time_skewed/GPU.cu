@@ -123,7 +123,7 @@ int main(int argc, char *argv[])
 
   // Calculate dependency array sizes
   int dep_size_x = length;
-  int dep_size_y = (length / number_of_tiles_y) * STRIDE;
+  int dep_size_y = number_of_tiles_y * STRIDE;
   allocateDependencyArrays(&dev_dep_up, &dev_dep_down, dep_size_x, dep_size_y);
 
   printVariables(size, time, length, number_of_tiles_x, number_of_tiles_y, offset_tile_x, dep_size_x, dep_size_y);
