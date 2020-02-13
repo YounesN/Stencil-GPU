@@ -26,6 +26,19 @@ __device__ bool checkArrayAccess(int x, int y, int lengthx, int lengthy, const c
   return true;
 }
 
+void printVariables(int size, int time, int length, int number_of_tiles_x,
+  int number_of_tiles_y, int offset_tile_x, int dep_size_x, int dep_size_y)
+{
+  printf("size: %d\n", size);
+  printf("time: %d\n", time);
+  printf("number_of_tiles_x: %d\n", number_of_tiles_x);
+  printf("number_of_tiles_y: %d\n", number_of_tiles_y);
+  printf("offset_tile_x: %d\n", offset_tile_x);
+  printf("length: %d\n", length);
+  printf("dep_size_x: %d\n", dep_size_x);
+  printf("dep_size_y: %d\n", dep_size_y);
+}
+
 #define gpuErrchk(ans) { gpuAssert((ans), __FILE__, __LINE__); }
 inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort=true)
 {
@@ -113,6 +126,8 @@ int main(int argc, char *argv[])
   int dep_size_y = (length / number_of_tiles_y) * STRIDE;
   allocateDependencyArrays(&dev_dep_up, &dev_dep_down, dep_size_x, dep_size_y);
 
+  printVariables(size, time, length, number_of_tiles_x, number_of_tiles_y, offset_tile_x, dep_size_x, dep_size_y);
+
   /* Run Stencil */
   timer.StartTimer();
   stencil(&dev_input, &dev_output, size, length, time, selfCoefficient,
@@ -167,7 +182,8 @@ __global__ void run_stencil(DATA_TYPE *dev_input, DATA_TYPE *dev_output,
   int offset_y = blockIdx.y * P;
   int lane     = threadIdx.x % WARP_SIZE;
 
-  int lanePlusOffsetX = lane + offset_x;
+  int lanePlusOffsetX = lane + offset_x; bv   
+   
   if(lanePlusOffsetX >= length) {
     return;
   }
