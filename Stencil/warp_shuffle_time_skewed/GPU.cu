@@ -22,7 +22,7 @@ __device__ bool checkArrayAccess(int x, int y, int length, const char *file, int
   if(x>=length || y>=length) {
     printf("Illegal memory access in %s line %d!\n", file, line);
     printf("x: %d, y: %d, length: %d\n", x, y, length);
-    return false;
+    exit(EXIT_FAILURE);
   }
   return true;
 }
