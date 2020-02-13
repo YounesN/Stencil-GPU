@@ -20,7 +20,7 @@ using namespace std;
 __device__ bool checkArrayAccess(int x, int y, int lengthx, int lengthy, const char *file, int line) {
   
   if(x>=lengthx || y>=lengthy) {
-    printf("Illegal memory access in %s line %d! x: %d, y: %d, length: %d\n", file, line, x, y, length);
+    printf("Illegal memory access in %s line %d! x: %d, y: %d, lengthx: %d, lengthy: %d\n", file, line, x, y, lengthx, lengthy);
     return false;
   }
   return true;
