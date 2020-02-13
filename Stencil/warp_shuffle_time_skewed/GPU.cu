@@ -17,6 +17,16 @@ using namespace std;
 #define N 5        // N = 2 * STRIDE + 1
 #define C 6        // C = (N+P-1)
 
+__device__ bool checkArrayAccess(int x, int y, int length, const char *file, int line) {
+  
+  if(x>=length || y>=length) {
+    printf("Illegal memory access in %s line %d!\n", file, line);
+    printf("x: %d, y: %d, length: %d\n", x, y, length);
+    return false;
+  }
+  return true;
+}
+
 #define gpuErrchk(ans) { gpuAssert((ans), __FILE__, __LINE__); }
 inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort=true)
 {
@@ -157,6 +167,7 @@ __global__ void run_stencil(DATA_TYPE *dev_input, DATA_TYPE *dev_output,
 
   /* Initialize v[] array */
   for(i=0; i<C; i++) {
+    checkArrayAccess(lanePlusOffsetX, i + offset_y, length, __FILE__, __LINE__);
     v[i] = dev_input[from2Dto1D(lanePlusOffsetX, i + offset_y, length)];
   }
 
@@ -234,6 +245,7 @@ __global__ void run_stencil(DATA_TYPE *dev_input, DATA_TYPE *dev_output,
     // [ 4 ] // STRIDE  ** Copy these to array dev_dep_down
     // [ 5 ] // STRIDE  ** Copy these to array dev_dep_down
     for(i=0; i<STRIDE; i++) {
+      checkArrayAccess(lanePlusOffsetX, offset_y+i, length, __FILE__, __LINE__);
       dev_dep_down[from2Dto1D(lanePlusOffsetX, offset_y+i, length)] = v[P+STRIDE+i];
     }
 
@@ -246,6 +258,7 @@ __global__ void run_stencil(DATA_TYPE *dev_input, DATA_TYPE *dev_output,
     // [ 4 ] // STRIDE
     // [ 5 ] // STRIDE
     for(i=0; i<STRIDE; i++) {
+      checkArrayAccess(lanePlusOffsetX, offset_y+i, length, __FILE__, __LINE__);
       dev_dep_up[from2Dto1D(lanePlusOffsetX, offset_y+i, length)] = v[i];
     }
 
@@ -260,6 +273,7 @@ __global__ void run_stencil(DATA_TYPE *dev_input, DATA_TYPE *dev_output,
     // [ 4 ] // STRIDE  ** Copy these from array dev_dep_up
     // [ 5 ] // STRIDE  ** Copy these from array dev_dep_up
     for(i=0; i<STRIDE; i++) {
+      checkArrayAccess(lanePlusOffsetX, offset_y+i, length, __FILE__, __LINE__);
       v[P+STRIDE+i] = dev_dep_up[from2Dto1D(lanePlusOffsetX, offset_y+i, length)];
     }
 
@@ -272,6 +286,7 @@ __global__ void run_stencil(DATA_TYPE *dev_input, DATA_TYPE *dev_output,
     // [ 4 ] // STRIDE
     // [ 5 ] // STRIDE
     for(i=0; i<STRIDE; i++) {
+      checkArrayAccess(lanePlusOffsetX, offset_y+i, length, __FILE__, __LINE__);
       v[i] = dev_dep_down[from2Dto1D(lanePlusOffsetX, offset_y+i, length)] = v[i];
     }
   }
@@ -279,6 +294,7 @@ __global__ void run_stencil(DATA_TYPE *dev_input, DATA_TYPE *dev_output,
   /* Write the sum back to global memory */
   for(i=STRIDE; i<P+STRIDE; i++) {
     if(lane >= 2*STRIDE && lane+offset_x < length && i+offset_y < length-STRIDE) {
+      checkArrayAccess(lane+offset_x-STRIDE, i+offset_y, length, __FILE__, __LINE__);
       dev_output[from2Dto1D(lane+offset_x-STRIDE, i+offset_y, length)] = o[i];
     }
   }
