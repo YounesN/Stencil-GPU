@@ -17,9 +17,9 @@ using namespace std;
 #define N 5        // N = 2 * STRIDE + 1
 #define C 6        // C = (N+P-1)
 
-__device__ bool checkArrayAccess(int x, int y, int length, const char *file, int line) {
+__device__ bool checkArrayAccess(int x, int y, int lengthx, int lengthy, const char *file, int line) {
   
-  if(x>=length || y>=length) {
+  if(x>=lengthx || y>=lengthy) {
     printf("Illegal memory access in %s line %d! x: %d, y: %d, length: %d\n", file, line, x, y, length);
     return false;
   }
@@ -52,13 +52,19 @@ string toString(int n)
 void stencil(DATA_TYPE **dev_input, DATA_TYPE **dev_output, int size,
   int length, int time, float selfCoefficient, float neighborCoefficient,
   int number_of_tiles_x, int number_of_tiles_y, int offset_tile_x,
-  DATA_TYPE **dev_dep_up, DATA_TYPE **dev_dep_down);
+  DATA_TYPE **dev_dep_up, DATA_TYPE **dev_dep_down, int dep_size_x,
+  int dep_size_y);
+
 __global__ void run_stencil(DATA_TYPE *dev_input, DATA_TYPE *dev_output,
-  DATA_TYPE *dev_dep_up, DATA_TYPE *dev_dep_down, int offset_tile_x,
-  int length, float selfCoefficient, float neighborCoefficient, int time);
+  DATA_TYPE *dev_dep_up, DATA_TYPE *dev_dep_down, int dep_size_x, 
+  int dep_size_y, int offset_tile_x, int length, float selfCoefficient,
+  float neighborCoefficient, int time);
+
 void read_input(DATA_TYPE **input, DATA_TYPE **output, string filename,
   int length);
+
 void write_output(DATA_TYPE *output, string filename, int length);
+
 void allocateDependencyArrays(DATA_TYPE **dev_dep_up, DATA_TYPE **dev_dep_down, int dep_size_x, int dep_size_y);
 
 /* GPU Functions */
@@ -111,7 +117,7 @@ int main(int argc, char *argv[])
   timer.StartTimer();
   stencil(&dev_input, &dev_output, size, length, time, selfCoefficient,
     neighborCoefficient, number_of_tiles_x, number_of_tiles_y, offset_tile_x,
-    &dev_dep_up, &dev_dep_down);
+    &dev_dep_up, &dev_dep_down, dep_size_x, dep_size_y);
   cudaDeviceSynchronize();
   timer.StopTimer();
 
@@ -119,7 +125,6 @@ int main(int argc, char *argv[])
   cout << "It took " << timer.GetDurationInSecondsAccurate() << " seconds to run!\n";
 
   /* Copy data back to CPU */
-  gpuErrchk(cudaGetLastError());
   gpuErrchk(cudaMemcpy(output, dev_output, length * length * sizeof(DATA_TYPE), cudaMemcpyDeviceToHost));
 
   /* Output data */
@@ -138,21 +143,22 @@ int main(int argc, char *argv[])
 void stencil(DATA_TYPE **dev_input, DATA_TYPE **dev_output, int size,
   int length, int time, float selfCoefficient, float neighborCoefficient,
   int number_of_tiles_x, int number_of_tiles_y, int offset_tile_x,
-  DATA_TYPE **dev_dep_up, DATA_TYPE **dev_dep_down)
+  DATA_TYPE **dev_dep_up, DATA_TYPE **dev_dep_down, int dep_size_x,
+  int dep_size_y)
 {
   /* Calculate block and grid sizes */
   dim3 block_size = dim3(WARP_SIZE * NUMBER_OF_WARPS_PER_X, 1, 1);
   dim3 grid_size = dim3(number_of_tiles_x, number_of_tiles_y, 1);
   run_stencil<<< grid_size, block_size >>>(*dev_input, *dev_output, *dev_dep_up,
-    *dev_dep_down, offset_tile_x, length, selfCoefficient, neighborCoefficient,
+    *dev_dep_down, dep_size_x, dep_size_y, offset_tile_x, length, selfCoefficient, neighborCoefficient,
     time);
-  cudaDeviceSynchronize();
   gpuErrchk(cudaGetLastError());
 }
 
 __global__ void run_stencil(DATA_TYPE *dev_input, DATA_TYPE *dev_output,
-  DATA_TYPE *dev_dep_up, DATA_TYPE *dev_dep_down, int offset_tile_x,
-  int length, float selfCoefficient, float neighborCoefficient, int time)
+  DATA_TYPE *dev_dep_up, DATA_TYPE *dev_dep_down, int dep_size_x,
+  int dep_size_y, int offset_tile_x, int length, float selfCoefficient,
+  float neighborCoefficient, int time)
 {
   /* Declare variables */
   int i, j, t;
@@ -246,7 +252,7 @@ __global__ void run_stencil(DATA_TYPE *dev_input, DATA_TYPE *dev_output,
     // [ 4 ] // STRIDE  ** Copy these to array dev_dep_down
     // [ 5 ] // STRIDE  ** Copy these to array dev_dep_down
     for(i=0; i<STRIDE; i++) {
-      //checkArrayAccess(lanePlusOffsetX, offset_y+i, length, __FILE__, __LINE__);
+      checkArrayAccess(lanePlusOffsetX, offset_y+i, dep_size_x, dep_size_y, __FILE__, __LINE__);
       dev_dep_down[from2Dto1D(lanePlusOffsetX, offset_y+i, length)] = v[P+STRIDE+i];
     }
 
@@ -259,7 +265,7 @@ __global__ void run_stencil(DATA_TYPE *dev_input, DATA_TYPE *dev_output,
     // [ 4 ] // STRIDE
     // [ 5 ] // STRIDE
     for(i=0; i<STRIDE; i++) {
-      //checkArrayAccess(lanePlusOffsetX, offset_y+i, length, __FILE__, __LINE__);
+      checkArrayAccess(lanePlusOffsetX, offset_y+i, dep_size_x, dep_size_y, __FILE__, __LINE__);
       dev_dep_up[from2Dto1D(lanePlusOffsetX, offset_y+i, length)] = v[i];
     }
 
@@ -274,7 +280,7 @@ __global__ void run_stencil(DATA_TYPE *dev_input, DATA_TYPE *dev_output,
     // [ 4 ] // STRIDE  ** Copy these from array dev_dep_up
     // [ 5 ] // STRIDE  ** Copy these from array dev_dep_up
     for(i=0; i<STRIDE; i++) {
-      //checkArrayAccess(lanePlusOffsetX, offset_y+i, length, __FILE__, __LINE__);
+      checkArrayAccess(lanePlusOffsetX, offset_y+i, dep_size_x, dep_size_y, __FILE__, __LINE__);
       v[P+STRIDE+i] = dev_dep_up[from2Dto1D(lanePlusOffsetX, offset_y+i, length)];
     }
 
@@ -287,7 +293,7 @@ __global__ void run_stencil(DATA_TYPE *dev_input, DATA_TYPE *dev_output,
     // [ 4 ] // STRIDE
     // [ 5 ] // STRIDE
     for(i=0; i<STRIDE; i++) {
-      //checkArrayAccess(lanePlusOffsetX, offset_y+i, length, __FILE__, __LINE__);
+      checkArrayAccess(lanePlusOffsetX, offset_y+i, dep_size_x, dep_size_y, __FILE__, __LINE__);
       v[i] = dev_dep_down[from2Dto1D(lanePlusOffsetX, offset_y+i, length)] = v[i];
     }
   }
