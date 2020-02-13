@@ -119,6 +119,7 @@ int main(int argc, char *argv[])
   cout << "It took " << timer.GetDurationInSecondsAccurate() << " seconds to run!\n";
 
   /* Copy data back to CPU */
+  gpuErrchk(cudaGetLastError());
   gpuErrchk(cudaMemcpy(output, dev_output, length * length * sizeof(DATA_TYPE), cudaMemcpyDeviceToHost));
 
   /* Output data */
@@ -145,6 +146,7 @@ void stencil(DATA_TYPE **dev_input, DATA_TYPE **dev_output, int size,
   run_stencil<<< grid_size, block_size >>>(*dev_input, *dev_output, *dev_dep_up,
     *dev_dep_down, offset_tile_x, length, selfCoefficient, neighborCoefficient,
     time);
+  cudaDeviceSynchronize();
   gpuErrchk(cudaGetLastError());
 }
 
