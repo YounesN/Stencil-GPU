@@ -186,6 +186,7 @@ __global__ void run_stencil(DATA_TYPE *dev_input, DATA_TYPE *dev_output,
   int lane     = threadIdx.x % WARP_SIZE;
   int tileX = blockIdx.x;
   int tileY = blockIdx.y;
+  int number_of_tiles_x = gridDim.x;
 
   int lanePlusOffsetX = lane + offset_x;
   if(lanePlusOffsetX >= length) {
@@ -340,7 +341,7 @@ void copy_input_to_gpu(DATA_TYPE *input, DATA_TYPE **dev_input, DATA_TYPE **dev_
 
 void allocateDependencyArrays(DATA_TYPE **dev_dep_up, DATA_TYPE **dev_dep_down,
   DATA_TYPE **dev_dep_flag, int dep_size_x, int dep_size_y,
-  int number_of_tiles_x, int number_of_tiles_y);
+  int number_of_tiles_x, int number_of_tiles_y)
 {
   gpuErrchk(cudaMalloc((void**) dev_dep_up, dep_size_x * dep_size_y * sizeof(DATA_TYPE)));
   gpuErrchk(cudaMalloc((void**) dev_dep_down, dep_size_x * dep_size_y * sizeof(DATA_TYPE)));
