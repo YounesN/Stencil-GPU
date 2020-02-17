@@ -134,7 +134,7 @@ int main(int argc, char *argv[])
   timer.StartTimer();
   stencil(&dev_input, &dev_output, size, length, time, selfCoefficient,
     neighborCoefficient, number_of_tiles_x, number_of_tiles_y, offset_tile_x,
-    &dev_dep_up, &dev_dep_down, dep_size_x, dep_size_y);
+    &dev_dep_up, &dev_dep_down, dev_dep_flag, dep_size_x, dep_size_y);
   cudaDeviceSynchronize();
   timer.StopTimer();
 
