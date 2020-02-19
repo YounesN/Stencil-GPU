@@ -5,8 +5,8 @@
 #include "timing.h"
 #include <algorithm>
 #include <cooperative_groups.h>
+namespace cg = cooperative_groups;
 
-using namespace cg;
 using namespace std;
 
 #define from2Dto1D(x, y, length) ((y)*length+(x))
@@ -187,7 +187,7 @@ __global__ void run_stencil(DATA_TYPE *dev_input, DATA_TYPE *dev_output,
   int offset_y = blockIdx.y * P;
   int lane     = threadIdx.x % WARP_SIZE;
   int number_of_tiles_x = gridDim.x;
-  grid_group g = this_grid();
+  cg::grid_group g = cg::this_grid();
 
   int lanePlusOffsetX = lane + offset_x;
   if(lanePlusOffsetX >= length) {
