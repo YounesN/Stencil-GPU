@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <cooperative_groups.h>
 
+using namespace cg;
 using namespace std;
 
 #define from2Dto1D(x, y, length) ((y)*length+(x))
@@ -185,8 +186,6 @@ __global__ void run_stencil(DATA_TYPE *dev_input, DATA_TYPE *dev_output,
                  (threadIdx.x / 32) * offset_tile_x;
   int offset_y = blockIdx.y * P;
   int lane     = threadIdx.x % WARP_SIZE;
-  int tileX = blockIdx.x;
-  int tileY = blockIdx.y;
   int number_of_tiles_x = gridDim.x;
   grid_group g = this_grid();
 
