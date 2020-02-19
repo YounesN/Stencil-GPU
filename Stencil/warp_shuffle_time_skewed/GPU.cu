@@ -187,7 +187,7 @@ __global__ void run_stencil(DATA_TYPE *dev_input, DATA_TYPE *dev_output,
   int offset_y = blockIdx.y * P;
   int lane     = threadIdx.x % WARP_SIZE;
   int number_of_tiles_x = gridDim.x;
-  cg::grid_group g = cg::this_grid();
+  cg::grid_group grid = cg::this_grid();
 
   int lanePlusOffsetX = lane + offset_x;
   if(lanePlusOffsetX >= length) {
@@ -262,7 +262,7 @@ __global__ void run_stencil(DATA_TYPE *dev_input, DATA_TYPE *dev_output,
       dev_dep_up[from2Dto1D(lanePlusOffsetX, offset_y+i, length)] = v[i];
     }
 
-    g.sync(); // Sync whole grid
+    cg::sync(grid); // Sync whole grid
 
     for(i=0; i<STRIDE; i++) {
       v[P+STRIDE+i] = dev_dep_up[from2Dto1D(lanePlusOffsetX, offset_y+i, length)];
