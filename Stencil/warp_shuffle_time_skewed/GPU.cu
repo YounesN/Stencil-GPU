@@ -380,7 +380,7 @@ void allocateDependencyArrays(DATA_TYPE **dev_dep_up, DATA_TYPE **dev_dep_down,
 void GetCUDAInfo()
 {
   int numBlocksPerSm;
-  cudaOccupancyMaxActiveBlocksPerMultiprocessor(&numBlocksPerSm, run_stencil, numThreads, 0);
+  cudaOccupancyMaxActiveBlocksPerMultiprocessor(&numBlocksPerSm, run_stencil, 32, 0);
 
   cout << "Max active blocks per multiprocessor for 32 threads: " << numBlocksPerSm << endl;
 }
