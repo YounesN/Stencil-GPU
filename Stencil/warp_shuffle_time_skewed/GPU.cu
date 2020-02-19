@@ -169,13 +169,26 @@ void stencil(DATA_TYPE **dev_input, DATA_TYPE **dev_output, int size,
   dim3 block_size = dim3(WARP_SIZE * NUMBER_OF_WARPS_PER_X, 1, 1);
   dim3 grid_size = dim3(number_of_tiles_x, number_of_tiles_y, 1);
 
+  // load parameters
+  void* params[12];
+  params[0] = (void *) &dev_input;
+  params[1] = (void *) &dev_output;
+  params[2] = (void *) &dev_dep_up;
+  params[3] = (void *) &dev_dep_down;
+  params[4] = (void *) &dev_dep_flag;
+  params[5] = (void *) &dep_size_x;
+  params[6] = (void *) &dep_size_y;
+  params[7] = (void *) &offset_tile_x;
+  params[8] = (void *) &length;
+  params[9] = (void *) &selfCoefficient;
+  params[10] = (void *) &neighborCoefficient;
+  params[11] = (void *) &time;
+
   cudaLaunchCooperativeKernel(
     run_stencil,
     grid_size,
     block_size,
-    *dev_input, *dev_output, *dev_dep_up,
-    *dev_dep_down, *dev_dep_flag, dep_size_x, dep_size_y,
-    offset_tile_x, length, selfCoefficient, neighborCoefficient, time,
+    params,
     0,
     0
   );
