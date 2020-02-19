@@ -185,7 +185,7 @@ void stencil(DATA_TYPE **dev_input, DATA_TYPE **dev_output, int size,
   params[11] = (void *) &time;
 
   cudaLaunchCooperativeKernel(
-    run_stencil,
+    (void *)run_stencil,
     grid_size,
     block_size,
     params,
