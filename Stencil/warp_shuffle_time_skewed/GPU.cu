@@ -6,7 +6,7 @@
 #include <algorithm>
 #include <cooperative_groups.h>
 
-using namespace cooperative_groups;
+namespace cg = cooperative_groups;
 
 using namespace std;
 
@@ -87,6 +87,7 @@ void allocateDependencyArrays(DATA_TYPE **dev_dep_up, DATA_TYPE **dev_dep_down,
 
 /* GPU Functions */
 void copy_input_to_gpu(DATA_TYPE *input, DATA_TYPE **dev_input, DATA_TYPE **dev_output, int length);
+void GetCUDAInfo();
 
 int main(int argc, char *argv[])
 {
@@ -104,6 +105,8 @@ int main(int argc, char *argv[])
     cerr << "Usage: ./CPU <size> <time>\n";
     exit(EXIT_FAILURE);
   }
+
+  GetCUDAInfo();
 
   /* Set initial variables */
   size             = atoi(argv[1]);
@@ -212,7 +215,7 @@ __global__ void run_stencil(DATA_TYPE *dev_input, DATA_TYPE *dev_output,
                  (threadIdx.x / 32) * offset_tile_x;
   int offset_y = blockIdx.y * P;
   int lane     = threadIdx.x % WARP_SIZE;
-  grid_group grid = this_grid();
+  //cg::grid_group grid = cg::this_grid();
 
   int lanePlusOffsetX = lane + offset_x;
   if(lanePlusOffsetX >= length) {
@@ -287,7 +290,7 @@ __global__ void run_stencil(DATA_TYPE *dev_input, DATA_TYPE *dev_output,
       dev_dep_up[from2Dto1D(lanePlusOffsetX, offset_y+i, length)] = v[i];
     }
 
-    sync(grid); // Sync whole grid
+    //cg::sync(grid);
 
     for(i=0; i<STRIDE; i++) {
       v[P+STRIDE+i] = dev_dep_up[from2Dto1D(lanePlusOffsetX, offset_y+i, length)];
@@ -372,4 +375,12 @@ void allocateDependencyArrays(DATA_TYPE **dev_dep_up, DATA_TYPE **dev_dep_down,
 
   gpuErrchk(cudaMalloc((void**) dev_dep_flag, number_of_tiles_x * number_of_tiles_y * sizeof(DATA_TYPE)));
   gpuErrchk(cudaMemset(*dev_dep_flag, 0, number_of_tiles_x * number_of_tiles_y * sizeof(DATA_TYPE)));
+}
+
+void GetCUDAInfo()
+{
+  int numBlocksPerSm;
+  cudaOccupancyMaxActiveBlocksPerMultiprocessor(&numBlocksPerSm, run_stencil, numThreads, 0);
+
+  cout << "Max active blocks per multiprocessor for 32 threads: " << numBlocksPerSm << endl;
 }
