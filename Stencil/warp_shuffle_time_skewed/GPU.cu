@@ -168,10 +168,20 @@ void stencil(DATA_TYPE **dev_input, DATA_TYPE **dev_output, int size,
   /* Calculate block and grid sizes */
   dim3 block_size = dim3(WARP_SIZE * NUMBER_OF_WARPS_PER_X, 1, 1);
   dim3 grid_size = dim3(number_of_tiles_x, number_of_tiles_y, 1);
-  run_stencil<<< grid_size, block_size >>>(*dev_input, *dev_output, *dev_dep_up,
-    *dev_dep_down, *dev_dep_flag, dep_size_x, dep_size_y,
-    offset_tile_x, length, selfCoefficient, neighborCoefficient, time);
-  // gpuErrchk(cudaGetLastError());
+
+  cudaLaunchCooperativeKernel(
+    run_stencil,
+    dim3 grid_size,
+    dim3 block_size,
+    NULL,
+    0,
+    0
+  );
+
+  //run_stencil<<< grid_size, block_size >>>(*dev_input, *dev_output, *dev_dep_up,
+  //  *dev_dep_down, *dev_dep_flag, dep_size_x, dep_size_y,
+  //  offset_tile_x, length, selfCoefficient, neighborCoefficient, time);
+  //gpuErrchk(cudaGetLastError());
 }
 
 __global__ void run_stencil(DATA_TYPE *dev_input, DATA_TYPE *dev_output,
@@ -186,7 +196,6 @@ __global__ void run_stencil(DATA_TYPE *dev_input, DATA_TYPE *dev_output,
                  (threadIdx.x / 32) * offset_tile_x;
   int offset_y = blockIdx.y * P;
   int lane     = threadIdx.x % WARP_SIZE;
-  int number_of_tiles_x = gridDim.x;
   cg::grid_group grid = cg::this_grid();
 
   int lanePlusOffsetX = lane + offset_x;
