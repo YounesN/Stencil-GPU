@@ -4,6 +4,7 @@
 #include <cuda_runtime.h>
 #include "timing.h"
 #include <algorithm>
+#include <cooperative_groups.h>
 
 using namespace std;
 
@@ -187,6 +188,7 @@ __global__ void run_stencil(DATA_TYPE *dev_input, DATA_TYPE *dev_output,
   int tileX = blockIdx.x;
   int tileY = blockIdx.y;
   int number_of_tiles_x = gridDim.x;
+  grid_group g = this_grid();
 
   int lanePlusOffsetX = lane + offset_x;
   if(lanePlusOffsetX >= length) {
@@ -261,9 +263,7 @@ __global__ void run_stencil(DATA_TYPE *dev_input, DATA_TYPE *dev_output,
       dev_dep_up[from2Dto1D(lanePlusOffsetX, offset_y+i, length)] = v[i];
     }
 
-    dev_dep_flag[from2Dto1D(tileX, tileY, number_of_tiles_x)] = t;
-    while(dev_dep_flag[from2Dto1D(tileX, tileY-1, number_of_tiles_x)] != t-1);
-    while(dev_dep_flag[from2Dto1D(tileX, tileY+1, number_of_tiles_x)] != t-1);
+    g.sync();
 
     for(i=0; i<STRIDE; i++) {
       v[P+STRIDE+i] = dev_dep_up[from2Dto1D(lanePlusOffsetX, offset_y+i, length)];
