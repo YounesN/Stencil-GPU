@@ -5,7 +5,8 @@
 #include "timing.h"
 #include <algorithm>
 #include <cooperative_groups.h>
-namespace cg = cooperative_groups;
+
+using namespace cooperative_groups;
 
 using namespace std;
 
@@ -211,7 +212,7 @@ __global__ void run_stencil(DATA_TYPE *dev_input, DATA_TYPE *dev_output,
                  (threadIdx.x / 32) * offset_tile_x;
   int offset_y = blockIdx.y * P;
   int lane     = threadIdx.x % WARP_SIZE;
-  cg::grid_group grid = cg::this_grid();
+  grid_group grid = this_grid();
 
   int lanePlusOffsetX = lane + offset_x;
   if(lanePlusOffsetX >= length) {
@@ -286,7 +287,7 @@ __global__ void run_stencil(DATA_TYPE *dev_input, DATA_TYPE *dev_output,
       dev_dep_up[from2Dto1D(lanePlusOffsetX, offset_y+i, length)] = v[i];
     }
 
-    cg::sync(grid); // Sync whole grid
+    sync(grid); // Sync whole grid
 
     for(i=0; i<STRIDE; i++) {
       v[P+STRIDE+i] = dev_dep_up[from2Dto1D(lanePlusOffsetX, offset_y+i, length)];
