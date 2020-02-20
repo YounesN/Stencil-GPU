@@ -106,8 +106,6 @@ int main(int argc, char *argv[])
     exit(EXIT_FAILURE);
   }
 
-  GetCUDAInfo();
-
   /* Set initial variables */
   size             = atoi(argv[1]);
   time             = atoi(argv[2]);
@@ -132,9 +130,11 @@ int main(int argc, char *argv[])
   // Calculate dependency array sizes
   int dep_size_x = length;
   int dep_size_y = number_of_tiles_y * STRIDE;
-  allocateDependencyArrays(&dev_dep_up, &dev_dep_down, &dev_dep_flag, dep_size_x, dep_size_y, number_of_tiles_x, number_of_tiles_y);
+  allocateDependencyArrays(&dev_dep_up, &dev_dep_down, &dev_dep_flag,
+    dep_size_x, dep_size_y, number_of_tiles_x, number_of_tiles_y);
 
-  printVariables(size, time, length, number_of_tiles_x, number_of_tiles_y, offset_tile_x, dep_size_x, dep_size_y);
+  printVariables(size, time, length, number_of_tiles_x, number_of_tiles_y,
+    offset_tile_x, dep_size_x, dep_size_y);
 
   /* Run Stencil */
   timer.StartTimer();
@@ -172,6 +172,8 @@ void stencil(DATA_TYPE **dev_input, DATA_TYPE **dev_output, int size,
   /* Calculate block and grid sizes */
   dim3 block_size = dim3(WARP_SIZE * NUMBER_OF_WARPS_PER_X, 1, 1);
   dim3 grid_size = dim3(number_of_tiles_x, number_of_tiles_y, 1);
+
+  int activeBlocksPerSM = GetNumberOfActiveBlocksPerSM(WARP_SIZE * NUMBER_OF_WARPS_PER_X);
 
   // load parameters
   void* params[12];
@@ -377,10 +379,16 @@ void allocateDependencyArrays(DATA_TYPE **dev_dep_up, DATA_TYPE **dev_dep_down,
   gpuErrchk(cudaMemset(*dev_dep_flag, 0, number_of_tiles_x * number_of_tiles_y * sizeof(DATA_TYPE)));
 }
 
-void GetCUDAInfo()
+int GetNumberOfActiveBlocksPerSM(int number_of_threads)
 {
   int numBlocksPerSm;
-  cudaOccupancyMaxActiveBlocksPerMultiprocessor(&numBlocksPerSm, run_stencil, 32, 0);
+  cudaOccupancyMaxActiveBlocksPerMultiprocessor(
+    &numBlocksPerSm,
+    run_stencil,
+    number_of_threads,
+    0);
 
-  cout << "Max active blocks per multiprocessor for 32 threads: " << numBlocksPerSm << endl;
+  cout << "Max active blocks per multiprocessor for "
+       << number_of_threads
+       << " threads: " << numBlocksPerSm << endl;
 }
