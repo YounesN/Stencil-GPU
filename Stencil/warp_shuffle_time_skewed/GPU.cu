@@ -198,7 +198,7 @@ void stencil(DATA_TYPE **dev_input, DATA_TYPE **dev_output, int size,
   //run_stencil<<< grid_size, block_size >>>(*dev_input, *dev_output, *dev_dep_up,
   //  *dev_dep_down, *dev_dep_flag, dep_size_x, dep_size_y,
   //  offset_tile_x, length, selfCoefficient, neighborCoefficient, time);
-  //gpuErrchk(cudaGetLastError());
+  gpuErrchk(cudaGetLastError());
   cudaDeviceSynchronize();
   timer.StopTimer();
 
