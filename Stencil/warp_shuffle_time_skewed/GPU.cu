@@ -282,6 +282,9 @@ __global__ void run_stencil(DATA_TYPE *dev_input, DATA_TYPE *dev_output,
       }
     }
     for(i=0; i<C; i++) {
+      if(threadIdx.x == 0) {
+        printf("%f\n", o[i]);
+      }
       v[i] = o[i];
     }
 
