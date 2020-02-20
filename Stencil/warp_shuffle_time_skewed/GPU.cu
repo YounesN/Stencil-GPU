@@ -87,7 +87,7 @@ void allocateDependencyArrays(DATA_TYPE **dev_dep_up, DATA_TYPE **dev_dep_down,
 
 /* GPU Functions */
 void copy_input_to_gpu(DATA_TYPE *input, DATA_TYPE **dev_input, DATA_TYPE **dev_output, int length);
-void GetCUDAInfo();
+int GetNumberOfActiveBlocksPerSM(int number_of_threads);
 
 int main(int argc, char *argv[])
 {
