@@ -1,5 +1,5 @@
 NVCC = nvcc
-NVCCFLAGS = -std=c++11 -I../../Utility -rdc=true -lcuda
+NVCCFLAGS = -std=c++11 -I../../Utility -rdc=true -lcuda -arch=sm_70
 
 GPU: GPU.o
 	$(NVCC) $(NVCCFLAGS) -o GPU GPU.o
