@@ -391,4 +391,6 @@ int GetNumberOfActiveBlocksPerSM(int number_of_threads)
   cout << "Max active blocks per multiprocessor for "
        << number_of_threads
        << " threads: " << numBlocksPerSm << endl;
+
+  return numBlocksPerSm;
 }
