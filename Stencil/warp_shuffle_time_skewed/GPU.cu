@@ -96,7 +96,6 @@ int main(int argc, char *argv[])
   DATA_TYPE *dev_input, *dev_output, *dev_dep_up, *dev_dep_down, *dev_dep_flag;
   int size, length, time;
   string filename, output_filename;
-  MyTimer timer;
   float selfCoefficient = 1.0/9.0;
   float neighborCoefficient = 1.0/9.0;
 
@@ -137,12 +136,9 @@ int main(int argc, char *argv[])
     offset_tile_x, dep_size_x, dep_size_y);
 
   /* Run Stencil */
-  timer.StartTimer();
   stencil(&dev_input, &dev_output, size, length, time, selfCoefficient,
     neighborCoefficient, number_of_tiles_x, number_of_tiles_y, offset_tile_x,
     &dev_dep_up, &dev_dep_down, &dev_dep_flag, dep_size_x, dep_size_y);
-  cudaDeviceSynchronize();
-  timer.StopTimer();
 
   /* Print duration */
   cout << "It took " << timer.GetDurationInSecondsAccurate() << " seconds to run!\n";
@@ -173,6 +169,8 @@ void stencil(DATA_TYPE **dev_input, DATA_TYPE **dev_output, int size,
   dim3 block_size = dim3(WARP_SIZE * NUMBER_OF_WARPS_PER_X, 1, 1);
   dim3 grid_size = dim3(number_of_tiles_x, number_of_tiles_y, 1);
 
+  MyTimer timer;
+
   int activeBlocksPerSM = GetNumberOfActiveBlocksPerSM(WARP_SIZE * NUMBER_OF_WARPS_PER_X);
 
   // load parameters
@@ -190,6 +188,7 @@ void stencil(DATA_TYPE **dev_input, DATA_TYPE **dev_output, int size,
   params[10] = (void *) &neighborCoefficient;
   params[11] = (void *) &time;
 
+  timer.StartTimer();
   cudaLaunchCooperativeKernel(
     (void *)run_stencil,
     grid_size,
@@ -203,6 +202,8 @@ void stencil(DATA_TYPE **dev_input, DATA_TYPE **dev_output, int size,
   //  *dev_dep_down, *dev_dep_flag, dep_size_x, dep_size_y,
   //  offset_tile_x, length, selfCoefficient, neighborCoefficient, time);
   //gpuErrchk(cudaGetLastError());
+  cudaDeviceSynchronize();
+  timer.StopTimer();
 }
 
 __global__ void run_stencil(DATA_TYPE *dev_input, DATA_TYPE *dev_output,
