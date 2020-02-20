@@ -140,9 +140,6 @@ int main(int argc, char *argv[])
     neighborCoefficient, number_of_tiles_x, number_of_tiles_y, offset_tile_x,
     &dev_dep_up, &dev_dep_down, &dev_dep_flag, dep_size_x, dep_size_y);
 
-  /* Print duration */
-  cout << "It took " << timer.GetDurationInSecondsAccurate() << " seconds to run!\n";
-
   /* Copy data back to CPU */
   gpuErrchk(cudaMemcpy(output, dev_output, length * length * sizeof(DATA_TYPE), cudaMemcpyDeviceToHost));
 
@@ -204,6 +201,9 @@ void stencil(DATA_TYPE **dev_input, DATA_TYPE **dev_output, int size,
   //gpuErrchk(cudaGetLastError());
   cudaDeviceSynchronize();
   timer.StopTimer();
+  
+  /* Print duration */
+  cout << "It took " << timer.GetDurationInSecondsAccurate() << " seconds to run!\n";
 }
 
 __global__ void run_stencil(DATA_TYPE *dev_input, DATA_TYPE *dev_output,
