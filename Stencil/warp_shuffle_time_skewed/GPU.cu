@@ -228,6 +228,9 @@ __global__ void run_stencil(DATA_TYPE *dev_input, DATA_TYPE *dev_output,
   /* Initialize v[] array */
   for(i=0; i<C; i++) {
     v[i] = dev_input[from2Dto1D(lanePlusOffsetX, i + offset_y, length)];
+    if(threadIdx.x == 0) {
+      printf("init: %f\n", v[i]);
+    }
   }
 
   for(t=1; t<=time; t++) {
