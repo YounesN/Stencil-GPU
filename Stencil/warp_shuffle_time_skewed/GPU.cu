@@ -14,7 +14,7 @@ using namespace std;
 #define WARP_SIZE 32
 #define FULL_MASK 0xffffffff
 #define DATA_TYPE float
-#define NUMBER_OF_WARPS_PER_X 8
+#define NUMBER_OF_WARPS_PER_X 16
 #define P 2
 #define STRIDE 2
 #define N 5        // N = 2 * STRIDE + 1
