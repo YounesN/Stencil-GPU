@@ -139,12 +139,13 @@ void stencil(DATA_TYPE **dev_input, DATA_TYPE **dev_output, int size,
   // each thread will process P cell in y direction
   // so the number of tiles in y direction will be:
   int number_of_tiles_y = int(length / P) + 1;
+  
+  /* Calculate block and grid sizes */
+  dim3 block_size = dim3(WARP_SIZE * NUMBER_OF_WARPS_PER_X, 1, 1);
+  dim3 grid_size = dim3(number_of_tiles_x, number_of_tiles_y, 1);
 
   /* Loop over time dimension */
   for(i=0; i<time / BLOCKT; i++) {
-    /* Calculate block and grid sizes */
-    dim3 block_size = dim3(WARP_SIZE * NUMBER_OF_WARPS_PER_X, 1, 1);
-    dim3 grid_size = dim3(number_of_tiles_x, number_of_tiles_y, 1);
     run_single_stencil<<< grid_size, block_size >>>(*dev_input, *dev_output,
       length, selfCoefficient, neighborCoefficient);
     gpuErrchk(cudaGetLastError());
