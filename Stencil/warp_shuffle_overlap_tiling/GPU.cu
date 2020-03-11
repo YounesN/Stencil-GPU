@@ -123,7 +123,7 @@ __global__ void run_single_stencil(DATA_TYPE *dev_input, DATA_TYPE *dev_output,
     
     v[i] = sum;
 
-    DATA_TYPE sum = 0;
+    sum = 0;
 
     /* Left wing */
     for(j=-STRIDE; j<0; j++) {
