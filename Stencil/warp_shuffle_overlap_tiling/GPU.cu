@@ -40,41 +40,6 @@ string toString(int n)
     return tmp;
 }
 
-void stencil(DATA_TYPE **dev_input, DATA_TYPE **dev_output, int size,
-  int length, int time, float selfCoefficient, float neighborCoefficient)
-{
-  /* Define variables */
-  int i;
-  DATA_TYPE **swap;
-
-  // total number of available threads     = warpsize * number_of_warps_per_x 
-  // extra data we need to load per t      = 2 * stride (stride per direction, left and right)
-  // number of exact cell each block will process:
-  int number_of_tiles_x = int(length / (WARP_SIZE * NUMBER_OF_WARPS_PER_X - 2 * STRIDE * BLOCKT)) + 1;
-
-  // each thread will process P cell in y direction
-  // so the number of tiles in y direction will be:
-  int number_of_tiles_y = int(length / P) + 1;
-
-  /* Loop over time dimension */
-  for(i=0; i<time / BLOCKT; i++) {
-    /* Calculate block and grid sizes */
-    dim3 block_size = dim3(WARP_SIZE * NUMBER_OF_WARPS_PER_X, 1, 1);
-    dim3 grid_size = dim3(number_of_tiles_x, number_of_tiles_y, 1);
-    run_single_stencil<<< grid_size, block_size >>>(*dev_input, *dev_output,
-      length, selfCoefficient, neighborCoefficient);
-    gpuErrchk(cudaGetLastError());
-    //cudaDeviceSynchronize();
-
-    /* Swap pointers after each run so dev_output will always be output,
-     * and dev_input will be always input
-     */
-    swap = dev_input;
-    dev_input = dev_output;
-    dev_output = swap;
-  }
-}
-
 __global__ void run_single_stencil(DATA_TYPE *dev_input, DATA_TYPE *dev_output,
   int length, DATA_TYPE selfCoefficient, DATA_TYPE neighborCoefficient)
 {
@@ -156,6 +121,41 @@ __global__ void run_single_stencil(DATA_TYPE *dev_input, DATA_TYPE *dev_output,
     if(lane >= 2*STRIDE && lanePlusOffsetX < length && i+offset_y < length-STRIDE) {
       dev_output[from2Dto1D(lanePlusOffsetX+BLOCKT*STRIDE, i+offset_y, length)] = o[i];
     }
+  }
+}
+
+void stencil(DATA_TYPE **dev_input, DATA_TYPE **dev_output, int size,
+  int length, int time, float selfCoefficient, float neighborCoefficient)
+{
+  /* Define variables */
+  int i;
+  DATA_TYPE **swap;
+
+  // total number of available threads     = warpsize * number_of_warps_per_x 
+  // extra data we need to load per t      = 2 * stride (stride per direction, left and right)
+  // number of exact cell each block will process:
+  int number_of_tiles_x = int(length / (WARP_SIZE * NUMBER_OF_WARPS_PER_X - 2 * STRIDE * BLOCKT)) + 1;
+
+  // each thread will process P cell in y direction
+  // so the number of tiles in y direction will be:
+  int number_of_tiles_y = int(length / P) + 1;
+
+  /* Loop over time dimension */
+  for(i=0; i<time / BLOCKT; i++) {
+    /* Calculate block and grid sizes */
+    dim3 block_size = dim3(WARP_SIZE * NUMBER_OF_WARPS_PER_X, 1, 1);
+    dim3 grid_size = dim3(number_of_tiles_x, number_of_tiles_y, 1);
+    run_single_stencil<<< grid_size, block_size >>>(*dev_input, *dev_output,
+      length, selfCoefficient, neighborCoefficient);
+    gpuErrchk(cudaGetLastError());
+    //cudaDeviceSynchronize();
+
+    /* Swap pointers after each run so dev_output will always be output,
+     * and dev_input will be always input
+     */
+    swap = dev_input;
+    dev_input = dev_output;
+    dev_output = swap;
   }
 }
 
