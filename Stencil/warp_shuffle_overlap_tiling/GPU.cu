@@ -13,9 +13,9 @@ using namespace std;
 #define DATA_TYPE float
 #define NUMBER_OF_WARPS_PER_X 1
 #define P 2
-#define STRIDE 2
-#define N 5        // N = 2 * STRIDE + 1
-#define C 6        // C = (N+P-1)
+#define STRIDE 1
+#define N 3        // N = 2 * STRIDE + 1
+#define C 4        // C = (N+P-1)
 #define BLOCKT 2   // How many tiles in T dimensions
 
 #define gpuErrchk(ans) { gpuAssert((ans), __FILE__, __LINE__); }
