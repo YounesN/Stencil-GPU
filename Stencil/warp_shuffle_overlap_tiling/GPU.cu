@@ -138,7 +138,7 @@ void stencil(DATA_TYPE **dev_input, DATA_TYPE **dev_output, int size,
 
   // each thread will process P cell in y direction
   // so the number of tiles in y direction will be:
-  int number_of_tiles_y = int(length / P);
+  int number_of_tiles_y = int((1 << size) / P);
   
   /* Calculate block and grid sizes */
   dim3 block_size = dim3(WARP_SIZE * NUMBER_OF_WARPS_PER_X, 1, 1);
