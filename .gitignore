@@ -1,3 +1,6 @@
 .vscode
 Data
 *.o
+*.ncu-rep
+GPU
+CPU
