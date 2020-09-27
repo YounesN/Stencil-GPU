@@ -102,7 +102,7 @@ void stencil(DATA_TYPE **dev_input, DATA_TYPE **dev_output, int size, int stride
     dim3 grid_size = dim3((int)(true_size / BLOCKX) + 1, (int)(true_size / BLOCKY) + 1);
     run_single_stencil<<< grid_size, block_size >>>(*dev_input, *dev_output, true_size, stride, length);
     gpuErrchk(cudaGetLastError());
-    //cudaDeviceSynchronize();
+    cudaDeviceSynchronize();
 
     /* Swap pointers after each run so dev_output will always be output,
      * and dev_input will be always input
