@@ -21,23 +21,23 @@ using namespace std;
 #define gpuErrchk(ans) { gpuAssert((ans), __FILE__, __LINE__); }
 inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort=true)
 {
-   if (code != cudaSuccess) 
-   {
-      fprintf(stderr,"GPUassert: %s %s %d\n", cudaGetErrorString(code), file, line);
-      if (abort) exit(code);
-   }
+  if (code != cudaSuccess) 
+  {
+    fprintf(stderr,"GPUassert: %s %s %d\n", cudaGetErrorString(code), file, line);
+    if (abort) exit(code);
+  }
 }
 
 string toString(int n)
 {
-    string tmp = "";
-    while (n > 0) {
-        int re = n % 10;
-        n = n / 10;
-        tmp += re + '0';
-    }
-    reverse(tmp.begin(), tmp.end());
-    return tmp;
+  string tmp = "";
+  while (n > 0) {
+    int re = n % 10;
+    n = n / 10;
+    tmp += re + '0';
+  }
+  reverse(tmp.begin(), tmp.end());
+  return tmp;
 }
 
 __global__ void run_single_stencil(DATA_TYPE *dev_input, DATA_TYPE *dev_output,
