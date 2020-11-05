@@ -13,9 +13,9 @@ using namespace std;
 #define DATA_TYPE float
 #define NUMBER_OF_WARPS_PER_X 1
 #define P 2
-#define STRIDE 5
-#define N 11       // N = 2 * STRIDE + 1
-#define C 12       // C = (N+P-1)
+#define STRIDE 4
+#define N 9        // N = 2 * STRIDE + 1
+#define C 10       // C = (N+P-1)
 #define BLOCKT 2   // How many tiles in T dimensions
 
 #define gpuErrchk(ans) { gpuAssert((ans), __FILE__, __LINE__); }
@@ -45,7 +45,8 @@ __global__ void run_single_stencil(DATA_TYPE *dev_input, DATA_TYPE *dev_output,
 {
   /* Declare variables */
   int i, j;
-  DATA_TYPE v[C], o[C];
+  __shared__ DATA_TYPE o[WARP_SIZE * NUMBER_OF_WARPS_PER_X][C];
+  DATA_TYPE v[C];
   // each block thread ID will start with a multiplication of this number:
   int compute_x_size  = WARP_SIZE - 2 * STRIDE * BLOCKT;
   int offset_x        = blockIdx.x * compute_x_size;
@@ -113,13 +114,13 @@ __global__ void run_single_stencil(DATA_TYPE *dev_input, DATA_TYPE *dev_output,
       sum = v[i] * neighborCoefficient + sum;
     }
     
-    o[i] = sum;
+    o[threadIdx.x][i] = sum;
   }
 
   /* Write the sum back to global memory */
   for(i=STRIDE; i<P+STRIDE; i++) {
     if(lane >= 2*STRIDE && lanePlusOffsetX < length && i+offset_y < length-STRIDE) {
-      dev_output[from2Dto1D(lanePlusOffsetX+BLOCKT*STRIDE, i+offset_y, length)] = o[i];
+      dev_output[from2Dto1D(lanePlusOffsetX+BLOCKT*STRIDE, i+offset_y, length)] = o[threadIdx.x][i];
     }
   }
 }
