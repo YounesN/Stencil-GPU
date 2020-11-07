@@ -13,9 +13,9 @@ using namespace std;
 #define DATA_TYPE float
 #define NUMBER_OF_WARPS_PER_X 1
 #define P 2
-#define STRIDE 1
-#define N 3        // N = 2 * STRIDE + 1
-#define C 4       // C = (N+P-1)
+#define STRIDE 4
+#define N 9        // N = 2 * STRIDE + 1
+#define C 10        // C = (N+P-1)
 
 #define gpuErrchk(ans) { gpuAssert((ans), __FILE__, __LINE__); }
 inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort=true)
@@ -95,10 +95,10 @@ int main(int argc, char *argv[])
   cout << "It took " << timer.GetDurationInSecondsAccurate() << " seconds to run!\n";
 
   /* Copy data back to CPU */
-  gpuErrchk(cudaMemcpy(output, dev_output, length * length * sizeof(DATA_TYPE), cudaMemcpyDeviceToHost));
+  //gpuErrchk(cudaMemcpy(output, dev_output, length * length * sizeof(DATA_TYPE), cudaMemcpyDeviceToHost));
 
   /* Output data */
-  write_output(output, output_filename, length);
+  //write_output(output, output_filename, length);
 
   /* Free allocated memory */
   cudaFree(dev_input);
@@ -152,6 +152,9 @@ __global__ void run_single_stencil(DATA_TYPE *dev_input, DATA_TYPE *dev_output,
   int lane     = threadIdx.x % WARP_SIZE;
 
   int lanePlusOffsetX = lane + offset_x;
+
+  if(lanePlusOffsetX >= length) return;
+  if(offset_y + C >= length) return;
 
   /* Initialize v[] array */
   for(i=0; i<C; i++) {
